@@ -6,8 +6,18 @@ import {
     declineRide,
     updateRideStatus,
     toggleDriverAvailability,
-    getRideDetails
+    getRideDetails,
+    openReviewModal,
+    openDriverProfileModal
 } from '../../redux/slices/rideSlice';
+import {
+    openPaymentModal,
+    openReceiptModal,
+    openEarningsModal,
+    simulateVerifiedPayment
+} from '../../redux/slices/paymentSlice';
+import PaymentModal from '../payment/PaymentModal';
+import ReceiptModal from '../payment/ReceiptModal';
 import { clearDestination } from '../../redux/slices/mapSlice';
 import {
     Car,
@@ -25,7 +35,11 @@ import {
     Play,
     Check,
     X,
-    Radio
+    Radio,
+    CreditCard,
+    Receipt,
+    Lock,
+    TrendingUp
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -279,9 +293,15 @@ export default function ActiveRideCard({ ride }) {
                                 <h4 className="font-bold text-base text-[#3B2A2A] font-display">
                                     {ride?.driverName || "Vikramaditya Sharma"}
                                 </h4>
-                                <span className="flex items-center gap-0.5 text-xs font-bold text-[#C9871A] bg-[#FFF8E8] px-1.5 py-0.5 rounded-md">
+                                <button
+                                    type="button"
+                                    onClick={() => dispatch(openDriverProfileModal(ride))}
+                                    className="flex items-center gap-0.5 text-xs font-bold text-[#C9871A] bg-[#FFF8E8] hover:bg-[#FEEFC3] px-2 py-0.5 rounded-md transition-colors"
+                                    title="View Driver Profile & Reviews"
+                                >
                                     <Star className="w-3 h-3 fill-current" /> {ride?.driverRating ? Number(ride.driverRating).toFixed(2) : "4.94"}
-                                </span>
+                                    <span className="text-[10px] text-gray-400 font-normal ml-0.5">Reviews</span>
+                                </button>
                             </div>
                             <p className="text-xs text-[#5C4A4A] mt-0.5 font-medium">
                                 {ride?.driverVehicle || "Maruti Suzuki Dzire (Pearl White)"}
@@ -320,17 +340,103 @@ export default function ActiveRideCard({ ride }) {
                 </div>
             </div>
 
+            {/* Day 8 Payment Status Banner for Completed Rides */}
+            {status === 'COMPLETED' && (
+                <div className="space-y-2 animate-fade-in">
+                    {ride?.payment?.status === 'SUCCEEDED' ? (
+                        <div className="p-4 rounded-2xl bg-[#E6F9F0] border border-[#A7F3D0] flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-[#D1FAE5] text-[#059669] flex items-center justify-center">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-extrabold text-xs text-[#059669]">Payment Verified & Completed</p>
+                                    <p className="text-[11px] text-[#047857]">
+                                        Recorded in PostgreSQL • Ref: {ride.payment.providerPaymentId?.substring(0, 15)}...
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                {!ride?.review ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => dispatch(openReviewModal(ride))}
+                                        className="px-3.5 py-2 rounded-xl bg-gradient-to-tr from-[#FF7A59] to-[#E8532E] text-xs font-extrabold text-white shadow-sm flex items-center gap-1.5 transition-all hover:scale-102"
+                                    >
+                                        <Star className="w-3.5 h-3.5 fill-current" />
+                                        <span>Rate Driver</span>
+                                    </button>
+                                ) : (
+                                    <span className="px-2.5 py-1.5 rounded-xl bg-[#FFF8E8] border border-[#FDE68A] text-xs font-bold text-[#D97706] flex items-center gap-1">
+                                        <Star className="w-3.5 h-3.5 fill-current" />
+                                        <span>Rated {ride.review.rating}★</span>
+                                    </span>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => dispatch(openReceiptModal())}
+                                    className="px-3.5 py-2 rounded-xl bg-white border border-[#A7F3D0] text-xs font-extrabold text-[#059669] hover:bg-[#D1FAE5] shadow-sm flex items-center gap-1.5 transition-all"
+                                >
+                                    <Receipt className="w-3.5 h-3.5" />
+                                    <span>Receipt</span>
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="p-4 rounded-2xl bg-[#FFF6F3] border border-[#FFD6CA] flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-[#FFEBE5] text-[#E8532E] flex items-center justify-center">
+                                    <AlertCircle className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-extrabold text-xs text-[#E8532E]">Payment Pending</p>
+                                    <p className="text-[11px] text-[#7A6A6A]">Complete ride payment with Stripe</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => dispatch(openPaymentModal())}
+                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF7A59] to-[#E8532E] text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"
+                            >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                <span>Pay ${parseFloat(ride?.finalFare || ride?.estimatedFare || 14.50).toFixed(2)}</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Trip Fare & Action Footer */}
             <div className="pt-2 border-t border-[#E8DFDF]/60 flex items-center justify-between">
                 <div>
                     <span className="text-[10px] uppercase font-bold text-[#A39494]">Total Fare</span>
                     <p className="font-display font-extrabold text-2xl text-[#3B2A2A]">
-                        ${parseFloat(ride?.estimatedFare || 14.50).toFixed(2)}
+                        ${parseFloat(ride?.finalFare || ride?.estimatedFare || 14.50).toFixed(2)}
                     </p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {status === 'COMPLETED' || status === 'CANCELLED' ? (
+                    {status === 'COMPLETED' ? (
+                        <>
+                            {ride?.payment?.status !== 'SUCCEEDED' ? (
+                                <button
+                                    type="button"
+                                    onClick={() => dispatch(openPaymentModal())}
+                                    className="btn btn-primary btn-sm flex items-center gap-1.5"
+                                >
+                                    <Lock className="w-3.5 h-3.5" />
+                                    <span>Pay Now</span>
+                                </button>
+                            ) : null}
+                            <button
+                                type="button"
+                                onClick={handleBookAnother}
+                                className="btn btn-secondary btn-sm"
+                            >
+                                Book Another Ride
+                            </button>
+                        </>
+                    ) : status === 'CANCELLED' ? (
                         <button
                             type="button"
                             onClick={handleBookAnother}
@@ -351,7 +457,7 @@ export default function ActiveRideCard({ ride }) {
                 </div>
             </div>
 
-            {/* Day 5 Simulation Panel (For Testing Transitions & Acceptance) */}
+            {/* Day 5 & Day 8 Simulation Panel (For Testing Transitions, Acceptance & Stripe Payments) */}
             <div className="pt-3 border-t border-dashed border-[#E8DFDF]">
                 <button
                     type="button"
@@ -360,13 +466,13 @@ export default function ActiveRideCard({ ride }) {
                 >
                     <span className="flex items-center gap-1.5">
                         <Shield className="w-3.5 h-3.5 text-[#FF7A59]" />
-                        Day 5 Driver Simulation & Backend Tester
+                        Simulation & Payment Tester (Days 5–8)
                     </span>
                     {showSimulationTools ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
 
                 {showSimulationTools && (
-                    <div className="mt-3 p-3.5 rounded-2xl bg-[#3B2A2A]/5 border border-[#3B2A2A]/10 space-y-3 text-xs">
+                    <div className="mt-3 p-3.5 rounded-2xl bg-[#3B2A2A]/5 border border-[#3B2A2A]/10 space-y-3.5 text-xs">
                         {/* Driver Online Toggle */}
                         <div className="flex items-center justify-between pb-2 border-b border-black/5">
                             <span className="font-semibold text-[#5C4A4A]">Driver Availability:</span>
@@ -385,7 +491,7 @@ export default function ActiveRideCard({ ride }) {
 
                         {/* Lifecycle Transition Buttons */}
                         <div className="space-y-1.5">
-                            <span className="font-semibold text-[#5C4A4A] block">Test Lifecycle Transitions:</span>
+                            <span className="font-semibold text-[#5C4A4A] block">Lifecycle Transitions:</span>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                                 <button
                                     type="button"
@@ -437,9 +543,69 @@ export default function ActiveRideCard({ ride }) {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Day 8 Stripe Payments Simulation */}
+                        <div className="pt-2 border-t border-black/5 space-y-1.5">
+                            <span className="font-semibold text-[#5C4A4A] block">Day 8 Stripe Payment Simulation:</span>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            await dispatch(simulateVerifiedPayment({
+                                                rideId: ride.id,
+                                                amount: ride.finalFare || ride.estimatedFare || 14.50,
+                                                outcome: 'success'
+                                            })).unwrap();
+                                            toast.success("Webhook verified! Payment recorded in PostgreSQL.");
+                                            dispatch(getRideDetails(ride.id));
+                                        } catch (err) {
+                                            toast.error(typeof err === 'string' ? err : 'Webhook test failed');
+                                        }
+                                    }}
+                                    className="px-2 py-1.5 rounded-lg bg-[#E6F9F0] border border-[#A7F3D0] font-bold text-[#059669] hover:bg-[#D1FAE5] flex items-center justify-center gap-1"
+                                >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Simulate Webhook Pay</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            await dispatch(simulateVerifiedPayment({
+                                                rideId: ride.id,
+                                                amount: ride.finalFare || ride.estimatedFare || 14.50,
+                                                outcome: 'failed'
+                                            })).unwrap();
+                                            toast.info("Card decline webhook processed.");
+                                        } catch (err) {
+                                            toast.error("Failure webhook simulation error");
+                                        }
+                                    }}
+                                    className="px-2 py-1.5 rounded-lg bg-red-50 border border-red-200 font-bold text-red-600 hover:bg-red-100 flex items-center justify-center gap-1"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                    <span>Simulate Decline</span>
+                                </button>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => dispatch(openEarningsModal())}
+                                className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-[#3B2A2A] font-bold hover:bg-gray-50 flex items-center justify-center gap-1.5"
+                            >
+                                <TrendingUp className="w-3.5 h-3.5 text-[#059669]" />
+                                <span>View Driver Earnings Report (Day 8)</span>
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
+
+            {/* Modals */}
+            <PaymentModal ride={ride} />
+            <ReceiptModal ride={ride} />
         </div>
     );
 }

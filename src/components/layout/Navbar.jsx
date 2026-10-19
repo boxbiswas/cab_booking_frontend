@@ -3,7 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../../redux/slices/authSlice';
 import { markNotificationsRead, clearNotifications } from '../../redux/slices/rideSlice';
-import { Car, User, LogOut, ChevronDown, ChevronRight, Bell, Shield, Clock, Check, CheckCircle2 } from 'lucide-react';
+import { openPaymentMethodsModal, openEarningsModal } from '../../redux/slices/paymentSlice';
+import { Car, User, LogOut, ChevronDown, ChevronRight, Bell, Shield, Clock, Check, CheckCircle2, CreditCard, TrendingUp } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function Navbar() {
@@ -49,6 +50,15 @@ export default function Navbar() {
                                 }`}
                         >
                             Book a Ride
+                        </Link>
+                        <Link
+                            to="/history"
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/history'
+                                ? 'bg-[#FF7A59] text-white shadow-[0_4px_14px_rgba(255,122,89,0.30)]'
+                                : 'text-[#5C4A4A] hover:text-[#3B2A2A] hover:bg-white/50'
+                                }`}
+                        >
+                            Ride History
                         </Link>
                         <Link
                             to="/profile"
@@ -240,6 +250,57 @@ export default function Navbar() {
                                                 </div>
                                                 <ChevronRight className="w-3.5 h-3.5 text-[#C9BDBD] group-hover:text-[#FF7A59] transition-colors" />
                                             </Link>
+
+                                            {/* Ride History (Day 9) */}
+                                            <Link
+                                                to="/history"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold text-[#5C4A4A] hover:text-[#3B2A2A] hover:bg-[#FFF3EE] transition-all group"
+                                            >
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-7 h-7 rounded-lg bg-[#FFF3EE] group-hover:bg-white flex items-center justify-center text-[#FF7A59] transition-colors shadow-sm">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span>My Ride History</span>
+                                                </div>
+                                                <ChevronRight className="w-3.5 h-3.5 text-[#C9BDBD] group-hover:text-[#FF7A59] transition-colors" />
+                                            </Link>
+
+                                            {/* Saved Payment Methods (Day 8) */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setDropdownOpen(false);
+                                                    dispatch(openPaymentMethodsModal());
+                                                }}
+                                                className="w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold text-[#5C4A4A] hover:text-[#3B2A2A] hover:bg-[#FFF3EE] transition-all group text-left"
+                                            >
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-7 h-7 rounded-lg bg-[#FFF3EE] group-hover:bg-white flex items-center justify-center text-[#FF7A59] transition-colors shadow-sm">
+                                                        <CreditCard className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span>Payment Methods</span>
+                                                </div>
+                                                <ChevronRight className="w-3.5 h-3.5 text-[#C9BDBD] group-hover:text-[#FF7A59] transition-colors" />
+                                            </button>
+
+                                            {/* Driver Earnings (Day 8 Backend Records) */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setDropdownOpen(false);
+                                                    dispatch(openEarningsModal());
+                                                }}
+                                                className="w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold text-[#5C4A4A] hover:text-[#3B2A2A] hover:bg-[#E6F9F0] transition-all group text-left"
+                                            >
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-7 h-7 rounded-lg bg-[#E6F9F0] group-hover:bg-white flex items-center justify-center text-[#059669] transition-colors shadow-sm">
+                                                        <TrendingUp className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span className="text-[#059669]">Driver Earnings (Day 8)</span>
+                                                </div>
+                                                <ChevronRight className="w-3.5 h-3.5 text-[#A7F3D0] group-hover:text-[#059669] transition-colors" />
+                                            </button>
                                         </div>
 
                                         {/* Subtle Divider */}

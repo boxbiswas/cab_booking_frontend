@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import RideHistoryPage from './pages/RideHistoryPage';
 
 // Route Protection
 import ProtectedRoute from './components/ProtectedRoute';
@@ -36,6 +37,7 @@ function App() {
         {/* Protected Routes (Accessible by Authenticated Riders) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/history" element={<RideHistoryPage />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 

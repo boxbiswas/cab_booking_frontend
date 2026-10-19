@@ -9,8 +9,13 @@ import FareEstimate from '../components/ride/FareEstimate';
 import ConfirmRideButton from '../components/ride/ConfirmRideButton';
 import ActiveRideCard from '../components/ride/ActiveRideCard';
 
-import { calculateRoute, setPickup } from '../redux/slices/mapSlice';
-import { fetchFareEstimates, setCurrentRide, setDriverLocation, addNotification } from '../redux/slices/rideSlice';
+import { calculateRoute, setPickup, setDestination } from '../redux/slices/mapSlice';
+import { fetchFareEstimates, setCurrentRide, setDriverLocation, addNotification, getRideDetails, setSelectedTier } from '../redux/slices/rideSlice';
+import { setVerifiedPayment, openReceiptModal } from '../redux/slices/paymentSlice';
+import DriverEarningsModal from '../components/payment/DriverEarningsModal';
+import PaymentMethodsModal from '../components/payment/PaymentMethodsModal';
+import RatingModal from '../components/ride/RatingModal';
+import DriverProfileModal from '../components/ride/DriverProfileModal';
 import { getSocket, joinRideRoom, leaveRideRoom } from '../socket';
 import { Sparkles, Car } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -63,6 +68,36 @@ export default function Dashboard() {
         }, 1200);
     }, [dispatch]);
 
+    // Check for rebooked route stored in sessionStorage from Ride History (Day 9)
+    useEffect(() => {
+        try {
+            const rebookData = sessionStorage.getItem('hopin_rebook_route');
+            if (rebookData) {
+                const parsed = JSON.parse(rebookData);
+                if (parsed.pickup) {
+                    dispatch(setPickup({
+                        address: parsed.pickup.address,
+                        shortName: parsed.pickup.address.split(',')[0] || 'Pickup',
+                        latitude: parsed.pickup.lat,
+                        longitude: parsed.pickup.lng
+                    }));
+                }
+                if (parsed.dropoff) {
+                    dispatch(setDestination({
+                        address: parsed.dropoff.address,
+                        shortName: parsed.dropoff.address.split(',')[0] || 'Destination',
+                        latitude: parsed.dropoff.lat,
+                        longitude: parsed.dropoff.lng
+                    }));
+                }
+                if (parsed.rideType) {
+                    dispatch(setSelectedTier(parsed.rideType));
+                }
+                sessionStorage.removeItem('hopin_rebook_route');
+            }
+        } catch { }
+    }, [dispatch]);
+
     // Auto-calculate route when pickup and destination are selected
     useEffect(() => {
         if (pickup?.latitude && destination?.latitude) {
@@ -104,14 +139,31 @@ export default function Dashboard() {
             });
         };
 
+        const handlePaymentSuccess = ({ rideId, payment }) => {
+            if (rideId === currentRide?.id) {
+                dispatch(getRideDetails(rideId));
+                dispatch(setVerifiedPayment(payment));
+                dispatch(openReceiptModal());
+                toast.success(`Payment verified! $${payment.amount} recorded in PostgreSQL.`, { icon: '💳' });
+            }
+        };
+
+        const handlePaymentFailed = ({ message }) => {
+            toast.error(`Payment failed: ${message}`);
+        };
+
         socket.on('ride_status_update', handleStatusUpdate);
         socket.on('driver_location_update', handleLocationUpdate);
         socket.on('notification', handleNotification);
+        socket.on('payment_success', handlePaymentSuccess);
+        socket.on('payment_failed', handlePaymentFailed);
 
         return () => {
             socket.off('ride_status_update', handleStatusUpdate);
             socket.off('driver_location_update', handleLocationUpdate);
             socket.off('notification', handleNotification);
+            socket.off('payment_success', handlePaymentSuccess);
+            socket.off('payment_failed', handlePaymentFailed);
             leaveRideRoom(currentRide.id);
         };
     }, [currentRide?.id, user?.id, dispatch]);
@@ -190,6 +242,12 @@ export default function Dashboard() {
                         />
                     </div>
                 </div>
+
+                {/* Modals for Driver Earnings, Saved Payment Methods, Reviews & Driver Profile */}
+                <DriverEarningsModal />
+                <PaymentMethodsModal />
+                <RatingModal />
+                <DriverProfileModal />
             </div>
         </AppLayout>
     );
