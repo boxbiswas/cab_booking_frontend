@@ -110,6 +110,9 @@ const initialState = {
     estimates: [],
     currentRide: null,
     driverAvailability: true,
+    driverLocation: null, // { latitude, longitude, heading, speedKmh, remainingEtaMin }
+    notifications: [],   // [{ id, title, message, type, timestamp, read }]
+    unreadCount: 0,
     loadingEstimates: false,
     bookingLoading: false,
     bookingSuccess: false,
@@ -127,14 +130,35 @@ const rideSlice = createSlice({
         setCurrentRide: (state, action) => {
             state.currentRide = action.payload;
         },
+        setDriverLocation: (state, action) => {
+            state.driverLocation = action.payload;
+        },
+        addNotification: (state, action) => {
+            state.notifications.unshift({
+                ...action.payload,
+                read: false,
+                id: action.payload.id || `notif-${Date.now()}`
+            });
+            state.unreadCount += 1;
+        },
+        markNotificationsRead: (state) => {
+            state.notifications.forEach(n => { n.read = true; });
+            state.unreadCount = 0;
+        },
+        clearNotifications: (state) => {
+            state.notifications = [];
+            state.unreadCount = 0;
+        },
         resetBookingState: (state) => {
             state.bookingSuccess = false;
             state.currentRide = null;
+            state.driverLocation = null;
             state.error = null;
         },
         clearRideState: (state) => {
             state.estimates = [];
             state.currentRide = null;
+            state.driverLocation = null;
             state.bookingSuccess = false;
             state.error = null;
         }
@@ -213,5 +237,14 @@ const rideSlice = createSlice({
     }
 });
 
-export const { setSelectedTier, setCurrentRide, resetBookingState, clearRideState } = rideSlice.actions;
+export const {
+    setSelectedTier,
+    setCurrentRide,
+    setDriverLocation,
+    addNotification,
+    markNotificationsRead,
+    clearNotifications,
+    resetBookingState,
+    clearRideState
+} = rideSlice.actions;
 export default rideSlice.reducer;

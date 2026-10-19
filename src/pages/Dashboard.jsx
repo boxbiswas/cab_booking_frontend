@@ -10,14 +10,16 @@ import ConfirmRideButton from '../components/ride/ConfirmRideButton';
 import ActiveRideCard from '../components/ride/ActiveRideCard';
 
 import { calculateRoute, setPickup } from '../redux/slices/mapSlice';
-import { fetchFareEstimates } from '../redux/slices/rideSlice';
+import { fetchFareEstimates, setCurrentRide, setDriverLocation, addNotification } from '../redux/slices/rideSlice';
+import { getSocket, joinRideRoom, leaveRideRoom } from '../socket';
 import { Sparkles, Car } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function Dashboard() {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { pickup, destination, route } = useSelector((state) => state.map);
-    const { currentRide, bookingSuccess } = useSelector((state) => state.ride);
+    const { currentRide, bookingSuccess, driverLocation } = useSelector((state) => state.ride);
 
     // Auto-detect rider location on startup (browser GPS if granted, else network IP)
     useEffect(() => {
@@ -35,7 +37,7 @@ export default function Dashboard() {
                         }));
                     }, null, { timeout: 6000, enableHighAccuracy: false });
                 }
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         // If not already resolved by GPS, detect city via network IP
@@ -56,7 +58,7 @@ export default function Dashboard() {
                             }));
                         }
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             }
         }, 1200);
     }, [dispatch]);
@@ -77,6 +79,42 @@ export default function Dashboard() {
             }));
         }
     }, [route, dispatch]);
+
+    // Real-Time Socket.IO event listeners for live ride tracking and alerts
+    useEffect(() => {
+        if (!currentRide?.id) return;
+
+        joinRideRoom(currentRide.id, user?.id);
+        const socket = getSocket();
+
+        const handleStatusUpdate = ({ status, ride }) => {
+            if (ride) {
+                dispatch(setCurrentRide(ride));
+            }
+        };
+
+        const handleLocationUpdate = (loc) => {
+            dispatch(setDriverLocation(loc));
+        };
+
+        const handleNotification = (notif) => {
+            dispatch(addNotification(notif));
+            toast.info(`${notif.title}: ${notif.message}`, {
+                icon: notif.type === 'arriving' ? '📍' : (notif.type === 'completed' ? '🏁' : '🚗')
+            });
+        };
+
+        socket.on('ride_status_update', handleStatusUpdate);
+        socket.on('driver_location_update', handleLocationUpdate);
+        socket.on('notification', handleNotification);
+
+        return () => {
+            socket.off('ride_status_update', handleStatusUpdate);
+            socket.off('driver_location_update', handleLocationUpdate);
+            socket.off('notification', handleNotification);
+            leaveRideRoom(currentRide.id);
+        };
+    }, [currentRide?.id, user?.id, dispatch]);
 
     return (
         <AppLayout>
@@ -146,6 +184,8 @@ export default function Dashboard() {
                             pickup={pickup}
                             destination={destination}
                             route={route}
+                            driverLocation={driverLocation}
+                            driverName={currentRide?.driverName}
                             className="w-full h-full"
                         />
                     </div>

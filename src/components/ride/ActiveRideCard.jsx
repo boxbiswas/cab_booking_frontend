@@ -31,7 +31,7 @@ import { toast } from 'react-toastify';
 
 export default function ActiveRideCard({ ride }) {
     const dispatch = useDispatch();
-    const { driverAvailability, statusUpdating } = useSelector((state) => state.ride);
+    const { driverAvailability, statusUpdating, driverLocation } = useSelector((state) => state.ride);
     const [showSimulationTools, setShowSimulationTools] = useState(false);
     const [autoMatchCountdown, setAutoMatchCountdown] = useState(4);
 
@@ -192,11 +192,28 @@ export default function ActiveRideCard({ ride }) {
                             {status === 'COMPLETED' && "You've Arrived!"}
                             {status === 'CANCELLED' && "Ride Cancelled"}
                         </h3>
-                        <p className="text-xs text-[#7A6A6A] font-medium">
+                        <p className="text-xs text-[#7A6A6A] font-medium flex items-center gap-1.5 flex-wrap">
                             {status === 'REQUESTED' && `Auto-matching in ${autoMatchCountdown}s...`}
-                            {status === 'ACCEPTED' && "Driver is en route to your pickup point"}
-                            {status === 'DRIVER_ARRIVING' && "Please be ready at your pickup spot"}
-                            {status === 'IN_PROGRESS' && "Heading towards destination"}
+                            {status === 'ACCEPTED' && (
+                                <>
+                                    <span>Driver en route to pickup</span>
+                                    {driverLocation?.remainingEtaMin && (
+                                        <span className="font-bold text-[#E8532E]">• ETA: {driverLocation.remainingEtaMin} min</span>
+                                    )}
+                                </>
+                            )}
+                            {status === 'DRIVER_ARRIVING' && "Driver has arrived at pickup location!"}
+                            {status === 'IN_PROGRESS' && (
+                                <>
+                                    <span>On trip to destination</span>
+                                    {driverLocation?.remainingEtaMin && (
+                                        <span className="font-bold text-[#0891B2]">• {driverLocation.remainingEtaMin} min left</span>
+                                    )}
+                                    {driverLocation?.speedKmh && (
+                                        <span className="text-[11px] text-[#A39494]">({driverLocation.speedKmh} km/h)</span>
+                                    )}
+                                </>
+                            )}
                             {status === 'COMPLETED' && "Thank you for riding with HopIn"}
                             {status === 'CANCELLED' && "This booking was cancelled"}
                         </p>

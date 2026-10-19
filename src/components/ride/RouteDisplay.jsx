@@ -49,7 +49,37 @@ const createDestinationIcon = () => {
     });
 };
 
-export default function RouteDisplay({ pickup, destination, route }) {
+// Live Driver Marker matching DESIGN.md Section 9 & 10:
+// "driver is a coral car icon in a white circle with a pulsing ring, linear interpolation"
+const createDriverIcon = (heading = 0) => {
+    return L.divIcon({
+        className: 'custom-driver-marker',
+        html: `
+            <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <div style="position: absolute; inset: 0; border-radius: 50%; background: rgba(255, 122, 89, 0.35); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                <div style="
+                    width: 32px;
+                    height: 32px;
+                    background: #FFFFFF;
+                    border: 2.5px solid #FF7A59;
+                    border-radius: 50%;
+                    box-shadow: 0 4px 14px rgba(232, 83, 46, 0.35);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transform: rotate(${heading}deg);
+                    transition: transform 0.6s ease-out;
+                ">
+                    <span style="font-size: 16px; line-height: 1;">🚗</span>
+                </div>
+            </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+};
+
+export default function RouteDisplay({ pickup, destination, route, driverLocation, driverName }) {
     const map = useMap();
 
     // Auto-fit bounds whenever pickup or destination changes
@@ -57,10 +87,14 @@ export default function RouteDisplay({ pickup, destination, route }) {
         if (!map) return;
 
         if (pickup?.latitude && destination?.latitude) {
-            const bounds = L.latLngBounds([
+            const points = [
                 [pickup.latitude, pickup.longitude],
                 [destination.latitude, destination.longitude]
-            ]);
+            ];
+            if (driverLocation?.latitude && driverLocation?.longitude) {
+                points.push([driverLocation.latitude, driverLocation.longitude]);
+            }
+            const bounds = L.latLngBounds(points);
             map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
         } else if (pickup?.latitude) {
             map.setView([pickup.latitude, pickup.longitude], 14);
@@ -93,6 +127,24 @@ export default function RouteDisplay({ pickup, destination, route }) {
                     <Popup>
                         <div className="font-sans text-xs">
                             <span className="font-bold text-[#3B2A2A]">Destination:</span> {destination.shortName || destination.address}
+                        </div>
+                    </Popup>
+                </Marker>
+            )}
+
+            {/* Live Animated Driver Car Marker */}
+            {driverLocation?.latitude && driverLocation?.longitude && (
+                <Marker
+                    position={[driverLocation.latitude, driverLocation.longitude]}
+                    icon={createDriverIcon(driverLocation.heading || 0)}
+                >
+                    <Popup>
+                        <div className="font-sans text-xs space-y-0.5">
+                            <p className="font-bold text-[#E8532E]">{driverName || 'HopIn Driver'}</p>
+                            <p className="text-[11px] text-[#5C4A4A]">
+                                {driverLocation.speedKmh ? `${driverLocation.speedKmh} km/h • ` : ''}
+                                ETA: {driverLocation.remainingEtaMin || 3} min
+                            </p>
                         </div>
                     </Popup>
                 </Marker>

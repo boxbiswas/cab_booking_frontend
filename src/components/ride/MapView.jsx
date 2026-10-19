@@ -7,6 +7,8 @@ export default function MapView({
     pickup,
     destination,
     route,
+    driverLocation,
+    driverName,
     className = "w-full h-full min-h-[400px] rounded-3xl overflow-hidden shadow-glass border border-white/70"
 }) {
     const center = pickup?.latitude && pickup?.longitude
@@ -29,11 +31,13 @@ export default function MapView({
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {/* Markers & Polyline */}
+                {/* Markers, Live Driver, & Polyline */}
                 <RouteDisplay
                     pickup={pickup}
                     destination={destination}
                     route={route}
+                    driverLocation={driverLocation}
+                    driverName={driverName}
                 />
             </MapContainer>
 
