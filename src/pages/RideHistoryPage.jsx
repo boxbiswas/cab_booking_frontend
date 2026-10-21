@@ -211,6 +211,7 @@ export default function RideHistoryPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search pickup, dropoff, driver..."
                             className="w-full pl-10 pr-4 py-2 text-xs rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:bg-white transition-all text-[#3B2A2A]"
+                            style={{ paddingLeft: '2.5rem' }}
                         />
                         {searchTerm && (
                             <button

@@ -61,7 +61,6 @@ export default function ProfileEditForm({ user, onClose }) {
 
             <form onSubmit={handleSave} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Full Name */}
                     <div>
                         <label className="label" htmlFor="edit-name">Full Name</label>
                         <div className="relative">
@@ -74,12 +73,12 @@ export default function ProfileEditForm({ user, onClose }) {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className="input pl-10"
+                                style={{ paddingLeft: '2.5rem' }}
                                 required
                             />
                         </div>
                     </div>
 
-                    {/* Phone Number */}
                     <div>
                         <label className="label" htmlFor="edit-phone">Phone Number</label>
                         <div className="relative">
@@ -92,13 +91,13 @@ export default function ProfileEditForm({ user, onClose }) {
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 className="input pl-10"
+                                style={{ paddingLeft: '2.5rem' }}
                                 required
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* Profile Image URL */}
                 <div>
                     <label className="label" htmlFor="edit-avatar">Profile Image URL (Optional)</label>
                     <div className="relative">
@@ -112,12 +111,12 @@ export default function ProfileEditForm({ user, onClose }) {
                             value={profileImage}
                             onChange={(e) => setProfileImage(e.target.value)}
                             className="input pl-10"
+                            style={{ paddingLeft: '2.5rem' }}
                         />
                     </div>
                     <p className="text-xs text-[#A39494] mt-1">Provide a direct image URL to update your avatar</p>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex items-center justify-end gap-3 pt-3">
                     <button
                         type="button"
@@ -129,16 +128,10 @@ export default function ProfileEditForm({ user, onClose }) {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary btn-sm flex items-center gap-1.5"
                     >
-                        {loading ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                <Check className="w-4 h-4" />
-                                Save Changes
-                            </>
-                        )}
+                        <Check className="w-4 h-4" />
+                        <span>{loading ? "Saving..." : "Save Changes"}</span>
                     </button>
                 </div>
             </form>

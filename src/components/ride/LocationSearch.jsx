@@ -79,6 +79,7 @@ export default function LocationSearch({
                         }
                     }}
                     className="input pl-11 pr-10 text-sm font-medium"
+                    style={{ paddingLeft: '3rem', paddingRight: '2.5rem' }}
                 />
                 <div className="absolute right-3 flex items-center">
                     {isSearching ? (

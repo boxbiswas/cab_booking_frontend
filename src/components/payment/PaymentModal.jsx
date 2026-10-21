@@ -232,7 +232,8 @@ export default function PaymentModal({ ride }) {
                                         onChange={(e) => setCardNumber(e.target.value)}
                                         placeholder="4242 •••• •••• 4242"
                                         maxLength={19}
-                                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-sm font-semibold text-[#3B2A2A] focus:outline-none focus:ring-2 focus:ring-[#FF7A59] font-mono"
+                                        className="w-full pl-3.5 pr-20 py-2.5 rounded-xl bg-white border border-gray-300 text-sm font-semibold text-[#3B2A2A] focus:outline-none focus:ring-2 focus:ring-[#FF7A59] font-mono"
+                                        style={{ paddingRight: '5.5rem' }}
                                     />
                                     <span className="absolute right-3 top-2.5 text-xs font-bold text-[#FF7A59] bg-[#FFF3EE] px-2 py-0.5 rounded">
                                         VISA / MC

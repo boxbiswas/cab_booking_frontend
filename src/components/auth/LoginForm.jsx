@@ -37,10 +37,8 @@ export default function LoginForm() {
         }
     };
 
-
     return (
         <div className="w-full max-w-md mx-auto glass-3 rounded-4xl p-8 sm:p-10 border border-white/80 shadow-2xl animate-fade-in">
-            {/* Header */}
             <div className="text-center mb-8">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF7A59] to-[#E8532E] flex items-center justify-center text-white mx-auto mb-3 shadow-[0_8px_24px_rgba(255,122,89,0.35)]">
                     <Lock className="w-6 h-6" />
@@ -49,7 +47,6 @@ export default function LoginForm() {
                 <p className="text-sm text-[#7A6A6A] mt-1.5 font-medium">Log in to book your ride and track trips</p>
             </div>
 
-            {/* Error Notifications */}
             {(error || clientError) && (
                 <div className="mb-6 p-4 rounded-2xl bg-[#FFE1E8] border border-[#FFD0DC] flex items-start gap-3 text-sm text-[#E11D48] animate-fade-in">
                     <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -57,9 +54,7 @@ export default function LoginForm() {
                 </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Email Field */}
                 <div>
                     <label className="label" htmlFor="login-email">Email Address</label>
                     <div className="relative">
@@ -76,13 +71,13 @@ export default function LoginForm() {
                                 if (error) dispatch(clearAuthError());
                             }}
                             className="input pl-11"
+                            style={{ paddingLeft: '3rem' }}
                             autoComplete="email"
                             required
                         />
                     </div>
                 </div>
 
-                {/* Password Field */}
                 <div>
                     <label className="label" htmlFor="login-password">Password</label>
                     <div className="relative">
@@ -99,6 +94,7 @@ export default function LoginForm() {
                                 if (error) dispatch(clearAuthError());
                             }}
                             className="input pl-11 pr-11"
+                            style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
                             autoComplete="current-password"
                             required
                         />
@@ -112,7 +108,6 @@ export default function LoginForm() {
                     </div>
                 </div>
 
-                {/* Submit Button */}
                 <button
                     type="submit"
                     disabled={loading}
@@ -129,8 +124,6 @@ export default function LoginForm() {
                 </button>
             </form>
 
-
-            {/* Register Link Footer */}
             <div className="mt-6 text-center text-sm text-[#7A6A6A]">
                 Don't have an account yet?{' '}
                 <Link to="/register" className="font-bold text-[#E8532E] hover:underline">

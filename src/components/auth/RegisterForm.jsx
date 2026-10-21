@@ -60,7 +60,6 @@ export default function RegisterForm() {
 
     return (
         <div className="w-full max-w-md mx-auto glass-3 rounded-4xl p-8 sm:p-10 border border-white/80 shadow-2xl animate-fade-in">
-            {/* Header */}
             <div className="text-center mb-8">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF7A59] to-[#E8532E] flex items-center justify-center text-white mx-auto mb-3 shadow-[0_8px_24px_rgba(255,122,89,0.35)]">
                     <User className="w-6 h-6" />
@@ -69,7 +68,6 @@ export default function RegisterForm() {
                 <p className="text-sm text-[#7A6A6A] mt-1.5 font-medium">Join HopIn and start riding with ease</p>
             </div>
 
-            {/* Error Notifications */}
             {(error || clientError) && (
                 <div className="mb-6 p-4 rounded-2xl bg-[#FFE1E8] border border-[#FFD0DC] flex items-start gap-3 text-sm text-[#E11D48] animate-fade-in">
                     <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -77,9 +75,7 @@ export default function RegisterForm() {
                 </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Full Name */}
                 <div>
                     <label className="label" htmlFor="register-name">Full Name</label>
                     <div className="relative">
@@ -96,12 +92,12 @@ export default function RegisterForm() {
                                 if (error) dispatch(clearAuthError());
                             }}
                             className="input pl-11"
+                            style={{ paddingLeft: '3rem' }}
                             required
                         />
                     </div>
                 </div>
 
-                {/* Email Address */}
                 <div>
                     <label className="label" htmlFor="register-email">Email Address</label>
                     <div className="relative">
@@ -118,12 +114,12 @@ export default function RegisterForm() {
                                 if (error) dispatch(clearAuthError());
                             }}
                             className="input pl-11"
+                            style={{ paddingLeft: '3rem' }}
                             required
                         />
                     </div>
                 </div>
 
-                {/* Phone Number */}
                 <div>
                     <label className="label" htmlFor="register-phone">Phone Number</label>
                     <div className="relative">
@@ -140,12 +136,12 @@ export default function RegisterForm() {
                                 if (error) dispatch(clearAuthError());
                             }}
                             className="input pl-11"
+                            style={{ paddingLeft: '3rem' }}
                             required
                         />
                     </div>
                 </div>
 
-                {/* Password */}
                 <div>
                     <label className="label" htmlFor="register-password">Password</label>
                     <div className="relative">
@@ -162,6 +158,7 @@ export default function RegisterForm() {
                                 if (error) dispatch(clearAuthError());
                             }}
                             className="input pl-11 pr-11"
+                            style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
                             required
                         />
                         <button
@@ -174,7 +171,6 @@ export default function RegisterForm() {
                     </div>
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                     <label className="label" htmlFor="register-confirm-password">Confirm Password</label>
                     <div className="relative">
@@ -191,12 +187,12 @@ export default function RegisterForm() {
                                 if (error) dispatch(clearAuthError());
                             }}
                             className="input pl-11 pr-11"
+                            style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
                             required
                         />
                     </div>
                 </div>
 
-                {/* Submit Button */}
                 <button
                     type="submit"
                     disabled={loading}
@@ -213,11 +209,10 @@ export default function RegisterForm() {
                 </button>
             </form>
 
-            {/* Login Link Footer */}
             <div className="mt-6 text-center text-sm text-[#7A6A6A]">
                 Already have an account?{' '}
                 <Link to="/login" className="font-bold text-[#E8532E] hover:underline">
-                    Sign In instead
+                    Sign In
                 </Link>
             </div>
         </div>

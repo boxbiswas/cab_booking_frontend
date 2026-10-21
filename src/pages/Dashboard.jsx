@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import AppLayout from '../components/layout/AppLayout';
 import MapView from '../components/ride/MapView';
@@ -28,6 +28,7 @@ export default function Dashboard() {
     const { user } = useSelector((state) => state.auth);
     const { pickup, destination, route } = useSelector((state) => state.map);
     const { currentRide, bookingSuccess, driverLocation } = useSelector((state) => state.ride);
+    const processedPaymentKeys = useRef(new Set());
 
     // Auto-detect rider location on startup (browser GPS if granted, else network IP)
     useEffect(() => {
@@ -143,11 +144,20 @@ export default function Dashboard() {
         };
 
         const handlePaymentSuccess = ({ rideId, payment }) => {
-            if (rideId === currentRide?.id) {
+            if (rideId === currentRide?.id && payment) {
+                const paymentKey = `${rideId}_${payment.id || payment.amount}`;
+                if (processedPaymentKeys.current.has(paymentKey)) {
+                    return;
+                }
+                processedPaymentKeys.current.add(paymentKey);
+
                 dispatch(getRideDetails(rideId));
                 dispatch(setVerifiedPayment(payment));
                 dispatch(openReceiptModal());
-                toast.success(`Payment verified! $${payment.amount} recorded in PostgreSQL.`, { icon: '💳' });
+                toast.success(`Payment verified! $${payment.amount} recorded in PostgreSQL.`, {
+                    toastId: `payment-${paymentKey}`,
+                    icon: '💳'
+                });
             }
         };
 
