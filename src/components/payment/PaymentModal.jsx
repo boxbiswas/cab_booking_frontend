@@ -415,20 +415,9 @@ export default function PaymentModal({ ride }) {
                         )}
                     </button>
 
-                    {/* Developer / Day 8 Simulation Buttons */}
-                    <div className="flex items-center justify-between pt-1">
-                        <button
-                            type="button"
-                            onClick={() => handlePay('failed')}
-                            disabled={processingPayment}
-                            className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline"
-                        >
-                            Test Simulated Card Failure (400)
-                        </button>
-                        <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                            <Shield className="w-3 h-3 text-[#059669]" />
-                            PCI-DSS Compliant
-                        </span>
+                    <div className="flex items-center justify-center pt-1 text-[11px] text-[#A39494] gap-1.5">
+                        <Shield className="w-3 h-3 text-[#059669]" />
+                        <span>PCI-DSS Compliant • 256-Bit SSL Encrypted</span>
                     </div>
                 </div>
 

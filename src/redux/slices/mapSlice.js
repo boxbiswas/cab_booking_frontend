@@ -4,10 +4,23 @@ import api from '../../https/axios';
 // Search place autocomplete via backend geocoder
 export const searchPlaces = createAsyncThunk(
     'map/searchPlaces',
-    async (query, { rejectWithValue }) => {
+    async (payload, { getState, rejectWithValue }) => {
         try {
+            const query = typeof payload === 'string' ? payload : payload?.query;
             if (!query || query.trim().length < 2) return [];
-            const response = await api.get(`/maps/search?q=${encodeURIComponent(query)}`);
+
+            const state = getState();
+            // Automatically detect active coordinates to bias search towards user's area
+            const activeCoords = typeof payload === 'object' && payload?.lat
+                ? payload
+                : state.map?.pickup || state.map?.destination;
+
+            let url = `/maps/search?q=${encodeURIComponent(query.trim())}`;
+            if (activeCoords?.latitude && activeCoords?.longitude) {
+                url += `&lat=${activeCoords.latitude}&lng=${activeCoords.longitude}`;
+            }
+
+            const response = await api.get(url);
             return response.data.results || [];
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to search places');
@@ -78,6 +91,8 @@ const mapSlice = createSlice({
             // searchPlaces
             .addCase(searchPlaces.pending, (state) => {
                 state.isSearching = true;
+                state.suggestions = [];
+                state.error = null;
             })
             .addCase(searchPlaces.fulfilled, (state, action) => {
                 state.suggestions = action.payload;
@@ -85,6 +100,7 @@ const mapSlice = createSlice({
             })
             .addCase(searchPlaces.rejected, (state, action) => {
                 state.isSearching = false;
+                state.suggestions = [];
                 state.error = action.payload;
             })
 

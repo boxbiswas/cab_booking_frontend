@@ -3,18 +3,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     resetBookingState,
     acceptRide,
-    declineRide,
     updateRideStatus,
-    toggleDriverAvailability,
     getRideDetails,
     openReviewModal,
-    openDriverProfileModal
+    openDriverProfileModal,
+    openCancelModal,
+    openEmergencyModal,
+    openStopsModal,
+    fetchRideStops
 } from '../../redux/slices/rideSlice';
 import {
     openPaymentModal,
-    openReceiptModal,
-    openEarningsModal,
-    simulateVerifiedPayment
+    openReceiptModal
 } from '../../redux/slices/paymentSlice';
 import PaymentModal from '../payment/PaymentModal';
 import ReceiptModal from '../payment/ReceiptModal';
@@ -39,17 +39,29 @@ import {
     CreditCard,
     Receipt,
     Lock,
-    TrendingUp
+    ShieldAlert,
+    Route,
+    AlertTriangle
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-export default function ActiveRideCard({ ride }) {
+export default function ActiveRideCard({ ride, onViewMap }) {
     const dispatch = useDispatch();
-    const { driverAvailability, statusUpdating, driverLocation } = useSelector((state) => state.ride);
-    const [showSimulationTools, setShowSimulationTools] = useState(false);
+    const {
+        statusUpdating,
+        driverLocation,
+        currentRideStops
+    } = useSelector((state) => state.ride);
     const [autoMatchCountdown, setAutoMatchCountdown] = useState(4);
 
     const status = ride?.status || 'REQUESTED';
+
+    // Fetch ordered stops for the active ride
+    useEffect(() => {
+        if (ride?.id) {
+            dispatch(fetchRideStops(ride.id));
+        }
+    }, [ride?.id, dispatch]);
 
     // Auto-match simulation timer if ride is currently in REQUESTED status
     useEffect(() => {
@@ -91,17 +103,6 @@ export default function ActiveRideCard({ ride }) {
         }
     };
 
-    // Handle Manual Decline
-    const handleDecline = async () => {
-        if (!ride?.id) return;
-        try {
-            await dispatch(declineRide(ride.id)).unwrap();
-            toast.info("Ride request was declined by driver. Remains open for other drivers.");
-        } catch (error) {
-            toast.error("Decline action failed");
-        }
-    };
-
     // Handle Status Transition
     const handleStatusTransition = async (nextStatus) => {
         if (!ride?.id) return;
@@ -110,20 +111,6 @@ export default function ActiveRideCard({ ride }) {
             toast.success(`Ride status updated to ${nextStatus.replace('_', ' ')}`);
         } catch (error) {
             toast.error(typeof error === 'string' ? error : "Status transition rejected by backend");
-        }
-    };
-
-    // Test Double Accept / Multiple Driver Race Condition Prevention
-    const handleTestRaceCondition = async () => {
-        if (!ride?.id) return;
-        try {
-            await dispatch(acceptRide({
-                rideId: ride.id,
-                driverData: { driverName: "Second Driver (Competitor)" }
-            })).unwrap();
-            toast.warning("Warning: Multiple accept was not blocked.");
-        } catch (error) {
-            toast.success(`Prevention verified! Backend blocked with: "${error}"`);
         }
     };
 
@@ -234,17 +221,42 @@ export default function ActiveRideCard({ ride }) {
                     </div>
                 </div>
 
-                <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        status === 'COMPLETED'
-                            ? 'bg-[#D1FAE5] text-[#059669]'
-                            : status === 'CANCELLED'
-                            ? 'bg-[#FEE2E2] text-[#DC2626]'
-                            : 'bg-[#FFEBE5] text-[#E8532E]'
-                    }`}
-                >
-                    {ride?.rideType || 'SEDAN'}
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Day 12 Emergency SOS Button */}
+                    {status !== 'COMPLETED' && status !== 'CANCELLED' && (
+                        <button
+                            type="button"
+                            onClick={() => dispatch(openEmergencyModal())}
+                            className="px-2.5 py-1 rounded-full text-xs font-black bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center gap-1 active:scale-95 animate-pulse"
+                            title="Emergency Safety SOS"
+                        >
+                            <ShieldAlert className="w-3.5 h-3.5" />
+                            <span>SOS</span>
+                        </button>
+                    )}
+                    {onViewMap && (
+                        <button
+                            type="button"
+                            onClick={onViewMap}
+                            className="lg:hidden px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FF7A59] text-white shadow-xs flex items-center gap-1 active:scale-95"
+                            title="View Live Map"
+                        >
+                            <MapPin className="w-3 h-3" />
+                            <span>Map</span>
+                        </button>
+                    )}
+                    <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            status === 'COMPLETED'
+                                ? 'bg-[#D1FAE5] text-[#059669]'
+                                : status === 'CANCELLED'
+                                ? 'bg-[#FEE2E2] text-[#DC2626]'
+                                : 'bg-[#FFEBE5] text-[#E8532E]'
+                        }`}
+                    >
+                        {ride?.rideType || 'SEDAN'}
+                    </span>
+                </div>
             </div>
 
             {/* Searching Radar State for REQUESTED */}
@@ -271,7 +283,7 @@ export default function ActiveRideCard({ ride }) {
                         </button>
                         <button
                             type="button"
-                            onClick={() => handleStatusTransition('CANCELLED')}
+                            onClick={() => dispatch(openCancelModal())}
                             disabled={statusUpdating}
                             className="btn btn-secondary btn-sm text-xs text-[#DC2626]"
                         >
@@ -331,6 +343,24 @@ export default function ActiveRideCard({ ride }) {
                         <p className="font-semibold text-[#3B2A2A] truncate">{ride?.pickupAddress}</p>
                     </div>
                 </div>
+
+                {/* Day 12 Multi-Stop Ordered Stops */}
+                {((currentRideStops && currentRideStops.length > 0) || (ride?.stops && ride.stops.length > 0)) && (
+                    <div className="space-y-2 pl-3 border-l-2 border-dashed border-[#FF7A59]/40 my-1">
+                        {(currentRideStops?.length ? currentRideStops : ride?.stops || []).map((stop, sIdx) => (
+                            <div key={stop.id || sIdx} className="flex items-start gap-2 text-xs">
+                                <span className="w-4 h-4 rounded-full bg-[#FF7A59] text-white text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                    {stop.sequence || sIdx + 1}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <span className="text-[9px] uppercase font-bold text-[#A39494]">Stop {stop.sequence || sIdx + 1}</span>
+                                    <p className="font-semibold text-[#3B2A2A] truncate">{stop.address}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex items-start gap-3">
                     <Navigation className="w-4 h-4 text-[#3B2A2A] shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
@@ -338,6 +368,20 @@ export default function ActiveRideCard({ ride }) {
                         <p className="font-semibold text-[#3B2A2A] truncate">{ride?.dropoffAddress}</p>
                     </div>
                 </div>
+
+                {/* Day 12 Add Intermediate Stop Trigger */}
+                {status !== 'COMPLETED' && status !== 'CANCELLED' && (
+                    <div className="pt-1.5 border-t border-gray-100 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => dispatch(openStopsModal())}
+                            className="text-[11px] font-bold text-[#FF7A59] hover:text-[#E8532E] flex items-center gap-1 transition-colors"
+                        >
+                            <Route className="w-3.5 h-3.5" />
+                            <span>+ Add Stop</span>
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Day 8 Payment Status Banner for Completed Rides */}
@@ -437,17 +481,19 @@ export default function ActiveRideCard({ ride }) {
                             </button>
                         </>
                     ) : status === 'CANCELLED' ? (
-                        <button
-                            type="button"
-                            onClick={handleBookAnother}
-                            className="btn btn-primary btn-sm"
-                        >
-                            Book Another Ride
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleBookAnother}
+                                className="btn btn-primary btn-sm"
+                            >
+                                Book Another Ride
+                            </button>
+                        </div>
                     ) : (
                         <button
                             type="button"
-                            onClick={() => handleStatusTransition('CANCELLED')}
+                            onClick={() => dispatch(openCancelModal())}
                             disabled={status === 'IN_PROGRESS' || statusUpdating}
                             className="btn btn-secondary btn-sm text-[#DC2626] border-red-200 hover:bg-red-50"
                         >
@@ -457,151 +503,92 @@ export default function ActiveRideCard({ ride }) {
                 </div>
             </div>
 
-            {/* Day 5 & Day 8 Simulation Panel (For Testing Transitions, Acceptance & Stripe Payments) */}
-            <div className="pt-3 border-t border-dashed border-[#E8DFDF]">
-                <button
-                    type="button"
-                    onClick={() => setShowSimulationTools(!showSimulationTools)}
-                    className="w-full flex items-center justify-between text-xs font-bold text-[#7A6A6A] hover:text-[#3B2A2A] py-1"
-                >
-                    <span className="flex items-center gap-1.5">
-                        <Shield className="w-3.5 h-3.5 text-[#FF7A59]" />
-                        Simulation & Payment Tester (Days 5–8)
-                    </span>
-                    {showSimulationTools ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
+            {/* Day 12 Cancellation Details Notice */}
+            {status === 'CANCELLED' && (
+                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1 animate-fade-in">
+                    <p className="font-bold flex items-center gap-1.5 text-red-800">
+                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                        <span>Ride Cancelled by {ride?.cancelledBy || 'Rider'}</span>
+                    </p>
+                    {ride?.cancellationReason && (
+                        <p className="text-red-700">Reason: "{ride.cancellationReason}"</p>
+                    )}
+                    {ride?.cancellationFee > 0 ? (
+                        <p className="font-semibold text-red-800">
+                            Cancellation Fee Charged: ${parseFloat(ride.cancellationFee).toFixed(2)}
+                        </p>
+                    ) : (
+                        <p className="text-emerald-700 font-medium">Free Cancellation ($0.00)</p>
+                    )}
+                </div>
+            )}
 
-                {showSimulationTools && (
-                    <div className="mt-3 p-3.5 rounded-2xl bg-[#3B2A2A]/5 border border-[#3B2A2A]/10 space-y-3.5 text-xs">
-                        {/* Driver Online Toggle */}
-                        <div className="flex items-center justify-between pb-2 border-b border-black/5">
-                            <span className="font-semibold text-[#5C4A4A]">Driver Availability:</span>
+            {status !== 'COMPLETED' && status !== 'CANCELLED' && (
+                <div className="pt-3 border-t border-dashed border-[#E8DFDF]">
+                    <div className="p-3.5 rounded-2xl bg-[#FFF8F5] border border-[#FFD6CA] space-y-2.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#3B2A2A] flex items-center gap-1.5">
+                                <Car className="w-3.5 h-3.5 text-[#FF7A59]" />
+                                Trip Controls
+                            </span>
+                            <span className="text-[10px] font-semibold text-[#8C7A7A]">
+                                Advance driver status
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                             <button
                                 type="button"
-                                onClick={() => dispatch(toggleDriverAvailability(!driverAvailability))}
-                                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
-                                    driverAvailability
-                                        ? 'bg-[#D1FAE5] text-[#059669]'
-                                        : 'bg-[#F3F4F6] text-[#6B7280]'
+                                onClick={handleAccept}
+                                disabled={status !== 'REQUESTED' || statusUpdating}
+                                className={`px-2 py-2 rounded-xl text-xs font-bold transition-all text-center ${
+                                    status === 'REQUESTED'
+                                        ? 'bg-[#FF7A59] text-white shadow-sm ring-2 ring-[#FF7A59]/30'
+                                        : 'bg-white border border-gray-200 text-gray-400 opacity-50'
                                 }`}
                             >
-                                {driverAvailability ? '● Online (Accepting)' : '○ Offline'}
+                                1. Accept Ride
                             </button>
-                        </div>
-
-                        {/* Lifecycle Transition Buttons */}
-                        <div className="space-y-1.5">
-                            <span className="font-semibold text-[#5C4A4A] block">Lifecycle Transitions:</span>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                                <button
-                                    type="button"
-                                    onClick={handleAccept}
-                                    disabled={status !== 'REQUESTED' || statusUpdating}
-                                    className="px-2 py-1.5 rounded-lg bg-white border border-gray-200 font-bold text-[#3B2A2A] hover:bg-gray-50 disabled:opacity-40"
-                                >
-                                    1. Accept Ride
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleStatusTransition('DRIVER_ARRIVING')}
-                                    disabled={status !== 'ACCEPTED' || statusUpdating}
-                                    className="px-2 py-1.5 rounded-lg bg-white border border-gray-200 font-bold text-[#3B2A2A] hover:bg-gray-50 disabled:opacity-40"
-                                >
-                                    2. Driver Arriving
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleStatusTransition('IN_PROGRESS')}
-                                    disabled={status !== 'DRIVER_ARRIVING' || statusUpdating}
-                                    className="px-2 py-1.5 rounded-lg bg-white border border-gray-200 font-bold text-[#3B2A2A] hover:bg-gray-50 disabled:opacity-40"
-                                >
-                                    3. Start Trip
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleStatusTransition('COMPLETED')}
-                                    disabled={status !== 'IN_PROGRESS' || statusUpdating}
-                                    className="px-2 py-1.5 rounded-lg bg-white border border-gray-200 font-bold text-[#059669] hover:bg-gray-50 disabled:opacity-40"
-                                >
-                                    4. Complete Ride
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleDecline}
-                                    disabled={status !== 'REQUESTED' || statusUpdating}
-                                    className="px-2 py-1.5 rounded-lg bg-white border border-gray-200 font-bold text-[#D97706] hover:bg-gray-50 disabled:opacity-40"
-                                >
-                                    Decline Request
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleTestRaceCondition}
-                                    className="px-2 py-1.5 rounded-lg bg-amber-50 border border-amber-200 font-bold text-[#B45309] hover:bg-amber-100"
-                                    title="Verify that two drivers cannot accept the same ride"
-                                >
-                                    Test Double-Accept
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Day 8 Stripe Payments Simulation */}
-                        <div className="pt-2 border-t border-black/5 space-y-1.5">
-                            <span className="font-semibold text-[#5C4A4A] block">Day 8 Stripe Payment Simulation:</span>
-                            <div className="grid grid-cols-2 gap-1.5">
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        try {
-                                            await dispatch(simulateVerifiedPayment({
-                                                rideId: ride.id,
-                                                amount: ride.finalFare || ride.estimatedFare || 14.50,
-                                                outcome: 'success'
-                                            })).unwrap();
-                                            toast.success("Webhook verified! Payment recorded in PostgreSQL.");
-                                            dispatch(getRideDetails(ride.id));
-                                        } catch (err) {
-                                            toast.error(typeof err === 'string' ? err : 'Webhook test failed');
-                                        }
-                                    }}
-                                    className="px-2 py-1.5 rounded-lg bg-[#E6F9F0] border border-[#A7F3D0] font-bold text-[#059669] hover:bg-[#D1FAE5] flex items-center justify-center gap-1"
-                                >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Simulate Webhook Pay</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        try {
-                                            await dispatch(simulateVerifiedPayment({
-                                                rideId: ride.id,
-                                                amount: ride.finalFare || ride.estimatedFare || 14.50,
-                                                outcome: 'failed'
-                                            })).unwrap();
-                                            toast.info("Card decline webhook processed.");
-                                        } catch (err) {
-                                            toast.error("Failure webhook simulation error");
-                                        }
-                                    }}
-                                    className="px-2 py-1.5 rounded-lg bg-red-50 border border-red-200 font-bold text-red-600 hover:bg-red-100 flex items-center justify-center gap-1"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                    <span>Simulate Decline</span>
-                                </button>
-                            </div>
-
                             <button
                                 type="button"
-                                onClick={() => dispatch(openEarningsModal())}
-                                className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-[#3B2A2A] font-bold hover:bg-gray-50 flex items-center justify-center gap-1.5"
+                                onClick={() => handleStatusTransition('DRIVER_ARRIVING')}
+                                disabled={status !== 'ACCEPTED' || statusUpdating}
+                                className={`px-2 py-2 rounded-xl text-xs font-bold transition-all text-center ${
+                                    status === 'ACCEPTED'
+                                        ? 'bg-[#FF7A59] text-white shadow-sm ring-2 ring-[#FF7A59]/30'
+                                        : 'bg-white border border-gray-200 text-gray-400 opacity-50'
+                                }`}
                             >
-                                <TrendingUp className="w-3.5 h-3.5 text-[#059669]" />
-                                <span>View Driver Earnings Report (Day 8)</span>
+                                2. Driver Arriving
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleStatusTransition('IN_PROGRESS')}
+                                disabled={status !== 'DRIVER_ARRIVING' || statusUpdating}
+                                className={`px-2 py-2 rounded-xl text-xs font-bold transition-all text-center ${
+                                    status === 'DRIVER_ARRIVING'
+                                        ? 'bg-[#FF7A59] text-white shadow-sm ring-2 ring-[#FF7A59]/30'
+                                        : 'bg-white border border-gray-200 text-gray-400 opacity-50'
+                                }`}
+                            >
+                                3. Start Trip
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleStatusTransition('COMPLETED')}
+                                disabled={status !== 'IN_PROGRESS' || statusUpdating}
+                                className={`px-2 py-2 rounded-xl text-xs font-bold transition-all text-center ${
+                                    status === 'IN_PROGRESS'
+                                        ? 'bg-[#059669] text-white shadow-sm ring-2 ring-[#059669]/30'
+                                        : 'bg-white border border-gray-200 text-gray-400 opacity-50'
+                                }`}
+                            >
+                                4. Complete Ride
                             </button>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Modals */}
             <PaymentModal ride={ride} />

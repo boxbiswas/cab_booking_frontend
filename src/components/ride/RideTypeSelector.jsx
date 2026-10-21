@@ -98,9 +98,13 @@ export default function RideTypeSelector() {
                             </div>
 
                             <div className="mt-3 pt-2 border-t border-[#E8DFDF]/60 flex items-baseline justify-between">
-                                <span className="font-extrabold text-base text-[#3B2A2A] font-display">
-                                    {displayFare}
-                                </span>
+                                {loadingEstimates ? (
+                                    <div className="h-5 skeleton w-14 rounded-md" />
+                                ) : (
+                                    <span className="font-extrabold text-base text-[#3B2A2A] font-display">
+                                        {displayFare}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     );

@@ -185,6 +185,136 @@ export const fetchDriverRating = createAsyncThunk(
     }
 );
 
+// Day 12 Ride Cancellation (POST /rides/:id/cancel)
+export const cancelRide = createAsyncThunk(
+    'ride/cancelRide',
+    async ({ rideId, reason }, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/rides/${rideId}/cancel`, { reason });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to cancel ride');
+        }
+    }
+);
+
+// Day 12 Multi-Stop Rides: Add stops (POST /rides/:id/stops)
+export const addRideStops = createAsyncThunk(
+    'ride/addRideStops',
+    async ({ rideId, stops }, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/rides/${rideId}/stops`, { stops });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to add stops');
+        }
+    }
+);
+
+// Day 12 Multi-Stop Rides: Fetch stops (GET /rides/:id/stops)
+export const fetchRideStops = createAsyncThunk(
+    'ride/fetchRideStops',
+    async (rideId, { rejectWithValue }) => {
+        try {
+            const response = await api.get(`/rides/${rideId}/stops`);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch stops');
+        }
+    }
+);
+
+// Day 12 Promo Codes: Validate promotion (POST /promotions/validate)
+export const validatePromoCode = createAsyncThunk(
+    'ride/validatePromoCode',
+    async ({ code, rideFare }, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/promotions/validate', { code, rideFare });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Invalid or expired promo code');
+        }
+    }
+);
+
+// Day 12 Emergency SOS: Trigger SOS (POST /rides/:id/emergency)
+export const triggerEmergency = createAsyncThunk(
+    'ride/triggerEmergency',
+    async ({ rideId, latitude, longitude }, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/rides/${rideId}/emergency`, { latitude, longitude });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to trigger emergency SOS');
+        }
+    }
+);
+
+// Day 12 Emergency Contacts: List (GET /emergency-contacts)
+export const fetchEmergencyContacts = createAsyncThunk(
+    'ride/fetchEmergencyContacts',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get('/emergency-contacts');
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch emergency contacts');
+        }
+    }
+);
+
+// Day 12 Emergency Contacts: Add (POST /emergency-contacts)
+export const addEmergencyContact = createAsyncThunk(
+    'ride/addEmergencyContact',
+    async (contactData, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/emergency-contacts', contactData);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to add emergency contact');
+        }
+    }
+);
+
+// Day 12 Emergency Contacts: Delete (DELETE /emergency-contacts/:id)
+export const deleteEmergencyContact = createAsyncThunk(
+    'ride/deleteEmergencyContact',
+    async (contactId, { rejectWithValue }) => {
+        try {
+            const response = await api.delete(`/emergency-contacts/${contactId}`);
+            return { contactId, ...response.data };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to delete emergency contact');
+        }
+    }
+);
+
+// Day 12 Customer Support: List tickets (GET /support/tickets)
+export const fetchSupportTickets = createAsyncThunk(
+    'ride/fetchSupportTickets',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get('/support/tickets');
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch support tickets');
+        }
+    }
+);
+
+// Day 12 Customer Support: Create ticket (POST /support/tickets)
+export const createSupportTicket = createAsyncThunk(
+    'ride/createSupportTicket',
+    async (ticketData, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/support/tickets', ticketData);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to create support ticket');
+        }
+    }
+);
+
 const initialState = {
     selectedTier: 'SEDAN',
     estimates: [],
@@ -231,7 +361,35 @@ const initialState = {
         distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
     },
     reviewSubmitting: false,
-    reviewsLoading: false
+    reviewsLoading: false,
+
+    // Day 12 Ride Cancellation State
+    cancelModalOpen: false,
+    cancellingRide: false,
+
+    // Day 12 Promo Codes State
+    appliedPromo: null,
+    promoLoading: false,
+    promoError: null,
+
+    // Day 12 Multi-Stop Rides State
+    plannedStops: [],
+    currentRideStops: [],
+    stopsLoading: false,
+    stopsModalOpen: false,
+
+    // Day 12 Emergency SOS State
+    emergencyModalOpen: false,
+    emergencyLoading: false,
+    activeEmergencyAlert: null,
+    emergencyContacts: [],
+    contactsLoading: false,
+
+    // Day 12 Customer Support State
+    supportModalOpen: false,
+    supportTickets: [],
+    supportLoading: false,
+    ticketSubmitting: false
 };
 
 const rideSlice = createSlice({
@@ -302,6 +460,57 @@ const rideSlice = createSlice({
         },
         closeDriverProfileModal: (state) => {
             state.driverProfileModalOpen = false;
+        },
+
+        // Day 12 Ride Cancellation Reducers
+        openCancelModal: (state) => {
+            state.cancelModalOpen = true;
+        },
+        closeCancelModal: (state) => {
+            state.cancelModalOpen = false;
+        },
+
+        // Day 12 Emergency SOS Reducers
+        openEmergencyModal: (state) => {
+            state.emergencyModalOpen = true;
+        },
+        closeEmergencyModal: (state) => {
+            state.emergencyModalOpen = false;
+        },
+
+        // Day 12 Customer Support Reducers
+        openSupportModal: (state) => {
+            state.supportModalOpen = true;
+        },
+        closeSupportModal: (state) => {
+            state.supportModalOpen = false;
+        },
+
+        // Day 12 Multi-Stop Rides Reducers
+        openStopsModal: (state) => {
+            state.stopsModalOpen = true;
+        },
+        closeStopsModal: (state) => {
+            state.stopsModalOpen = false;
+        },
+        addPlannedStop: (state, action) => {
+            state.plannedStops.push({
+                ...action.payload,
+                sequence: state.plannedStops.length + 1
+            });
+        },
+        removePlannedStop: (state, action) => {
+            state.plannedStops = state.plannedStops.filter((_, idx) => idx !== action.payload);
+            state.plannedStops.forEach((stop, idx) => { stop.sequence = idx + 1; });
+        },
+        clearPlannedStops: (state) => {
+            state.plannedStops = [];
+        },
+
+        // Day 12 Promo Codes Reducer
+        clearAppliedPromo: (state) => {
+            state.appliedPromo = null;
+            state.promoError = null;
         }
     },
     extraReducers: (builder) => {
@@ -467,6 +676,148 @@ const rideSlice = createSlice({
             // Day 10: fetchDriverRating
             .addCase(fetchDriverRating.fulfilled, (state, action) => {
                 state.driverRatingData = action.payload;
+            })
+
+            // Day 12: cancelRide
+            .addCase(cancelRide.pending, (state) => {
+                state.cancellingRide = true;
+                state.error = null;
+            })
+            .addCase(cancelRide.fulfilled, (state, action) => {
+                state.cancellingRide = false;
+                state.cancelModalOpen = false;
+                const fee = action.payload.cancellationFee || 0;
+                if (state.currentRide) {
+                    state.currentRide = {
+                        ...state.currentRide,
+                        status: 'CANCELLED',
+                        cancelledBy: 'RIDER',
+                        cancellationReason: action.payload.reason || 'Cancelled by rider',
+                        cancellationFee: fee,
+                        finalFare: fee > 0 ? fee : (state.currentRide.finalFare || state.currentRide.estimatedFare)
+                    };
+                }
+                state.historyRides = state.historyRides.map(r =>
+                    r.id === action.payload.ride?.id ? {
+                        ...r,
+                        status: 'CANCELLED',
+                        cancellationReason: action.payload.reason,
+                        cancellationFee: fee
+                    } : r
+                );
+            })
+            .addCase(cancelRide.rejected, (state, action) => {
+                state.cancellingRide = false;
+                state.error = action.payload;
+            })
+
+            // Day 12: addRideStops
+            .addCase(addRideStops.pending, (state) => {
+                state.stopsLoading = true;
+            })
+            .addCase(addRideStops.fulfilled, (state, action) => {
+                state.stopsLoading = false;
+                state.stopsModalOpen = false;
+                if (action.payload.ride) {
+                    state.currentRide = action.payload.ride;
+                }
+                state.currentRideStops = action.payload.stops || [];
+                state.plannedStops = [];
+            })
+            .addCase(addRideStops.rejected, (state, action) => {
+                state.stopsLoading = false;
+                state.error = action.payload;
+            })
+
+            // Day 12: fetchRideStops
+            .addCase(fetchRideStops.fulfilled, (state, action) => {
+                state.currentRideStops = action.payload.stops || [];
+            })
+
+            // Day 12: validatePromoCode
+            .addCase(validatePromoCode.pending, (state) => {
+                state.promoLoading = true;
+                state.promoError = null;
+            })
+            .addCase(validatePromoCode.fulfilled, (state, action) => {
+                state.promoLoading = false;
+                state.appliedPromo = {
+                    code: action.payload.promotion?.code,
+                    discountAmount: action.payload.discountAmount,
+                    finalFare: action.payload.finalFare,
+                    discountType: action.payload.promotion?.discountType,
+                    discountValue: action.payload.promotion?.discountValue,
+                    description: action.payload.promotion?.description
+                };
+            })
+            .addCase(validatePromoCode.rejected, (state, action) => {
+                state.promoLoading = false;
+                state.appliedPromo = null;
+                state.promoError = action.payload;
+            })
+
+            // Day 12: triggerEmergency
+            .addCase(triggerEmergency.pending, (state) => {
+                state.emergencyLoading = true;
+            })
+            .addCase(triggerEmergency.fulfilled, (state, action) => {
+                state.emergencyLoading = false;
+                state.activeEmergencyAlert = action.payload.alert;
+            })
+            .addCase(triggerEmergency.rejected, (state, action) => {
+                state.emergencyLoading = false;
+                state.error = action.payload;
+            })
+
+            // Day 12: fetchEmergencyContacts
+            .addCase(fetchEmergencyContacts.pending, (state) => {
+                state.contactsLoading = true;
+            })
+            .addCase(fetchEmergencyContacts.fulfilled, (state, action) => {
+                state.contactsLoading = false;
+                state.emergencyContacts = action.payload.contacts || [];
+            })
+            .addCase(fetchEmergencyContacts.rejected, (state) => {
+                state.contactsLoading = false;
+            })
+
+            // Day 12: addEmergencyContact
+            .addCase(addEmergencyContact.fulfilled, (state, action) => {
+                if (action.payload.contact) {
+                    state.emergencyContacts.push(action.payload.contact);
+                }
+            })
+
+            // Day 12: deleteEmergencyContact
+            .addCase(deleteEmergencyContact.fulfilled, (state, action) => {
+                state.emergencyContacts = state.emergencyContacts.filter(c => c.id !== action.payload.contactId);
+            })
+
+            // Day 12: fetchSupportTickets
+            .addCase(fetchSupportTickets.pending, (state) => {
+                state.supportLoading = true;
+            })
+            .addCase(fetchSupportTickets.fulfilled, (state, action) => {
+                state.supportLoading = false;
+                state.supportTickets = action.payload.tickets || [];
+            })
+            .addCase(fetchSupportTickets.rejected, (state) => {
+                state.supportLoading = false;
+            })
+
+            // Day 12: createSupportTicket
+            .addCase(createSupportTicket.pending, (state) => {
+                state.ticketSubmitting = true;
+            })
+            .addCase(createSupportTicket.fulfilled, (state, action) => {
+                state.ticketSubmitting = false;
+                if (action.payload.ticket) {
+                    state.supportTickets.unshift(action.payload.ticket);
+                }
+            })
+            .addCase(createSupportTicket.rejected, (state, action) => {
+                state.ticketSubmitting = false;
+                state.error = action.payload;
             });
     }
 });
@@ -487,6 +838,18 @@ export const {
     openReviewModal,
     closeReviewModal,
     openDriverProfileModal,
-    closeDriverProfileModal
+    closeDriverProfileModal,
+    openCancelModal,
+    closeCancelModal,
+    openEmergencyModal,
+    closeEmergencyModal,
+    openSupportModal,
+    closeSupportModal,
+    openStopsModal,
+    closeStopsModal,
+    addPlannedStop,
+    removePlannedStop,
+    clearPlannedStops,
+    clearAppliedPromo
 } = rideSlice.actions;
 export default rideSlice.reducer;

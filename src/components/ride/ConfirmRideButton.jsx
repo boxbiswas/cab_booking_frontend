@@ -1,18 +1,38 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { bookRide } from '../../redux/slices/rideSlice';
+import { bookRide, addRideStops } from '../../redux/slices/rideSlice';
 import { ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function ConfirmRideButton({ onBookingConfirmed }) {
     const dispatch = useDispatch();
     const { pickup, destination, route } = useSelector((state) => state.map);
-    const { selectedTier, estimates, bookingLoading, bookingSuccess } = useSelector((state) => state.ride);
+    const {
+        selectedTier,
+        estimates,
+        bookingLoading,
+        bookingSuccess,
+        appliedPromo,
+        plannedStops
+    } = useSelector((state) => state.ride);
 
     const activeEstimate = estimates?.find((e) => e.rideType === selectedTier);
-    const totalFare = activeEstimate?.estimatedFare || 14.50;
-    const distanceKm = route?.distanceKm || 5.2;
-    const durationMin = route?.durationMin || 14;
+
+    // Additional distance and time from planned intermediate stops
+    const stopsAddedDistKm = (plannedStops?.length || 0) * 2.5;
+    const stopsAddedTimeMin = (plannedStops?.length || 0) * 6;
+
+    const distanceKm = Number(((route?.distanceKm || 5.2) + stopsAddedDistKm).toFixed(1));
+    const durationMin = (route?.durationMin || 14) + stopsAddedTimeMin;
+
+    const baseFare = activeEstimate?.breakdown?.baseFare || 4.00;
+    const distanceCharge = Number((distanceKm * (activeEstimate?.breakdown?.distanceCharge ? activeEstimate.breakdown.distanceCharge / (route?.distanceKm || 5.2) : 1.75)).toFixed(2));
+    const timeCharge = Number((durationMin * 0.35).toFixed(2));
+    const subtotalFare = Number((baseFare + distanceCharge + timeCharge).toFixed(2));
+
+    const discountAmount = appliedPromo?.discountAmount || 0;
+    const finalFare = Math.max(2.50, Number((subtotalFare - discountAmount).toFixed(2)));
+    const totalFare = finalFare;
 
     const handleConfirm = async () => {
         if (!pickup?.address || !pickup?.latitude) {
@@ -35,11 +55,26 @@ export default function ConfirmRideButton({ onBookingConfirmed }) {
                 dropoffLongitude: destination.longitude,
                 rideType: selectedTier,
                 distanceKm,
-                estimatedFare: totalFare,
+                estimatedFare: finalFare,
                 estimatedDurationMin: durationMin
             };
 
             const createdRide = await dispatch(bookRide(ridePayload)).unwrap();
+
+            // If rider added planned stops, persist them to backend route
+            if (plannedStops && plannedStops.length > 0) {
+                const formattedStops = plannedStops.map((s, idx) => ({
+                    address: s.address,
+                    latitude: s.latitude,
+                    longitude: s.longitude,
+                    sequence: idx + 1
+                }));
+                await dispatch(addRideStops({
+                    rideId: createdRide.id,
+                    stops: formattedStops
+                })).unwrap();
+            }
+
             toast.success("Ride requested! Searching for nearby HopIn drivers...");
             if (onBookingConfirmed) {
                 onBookingConfirmed(createdRide);

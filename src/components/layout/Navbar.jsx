@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../../redux/slices/authSlice';
-import { markNotificationsRead, clearNotifications } from '../../redux/slices/rideSlice';
+import { markNotificationsRead, clearNotifications, openSupportModal } from '../../redux/slices/rideSlice';
 import { openPaymentMethodsModal, openEarningsModal } from '../../redux/slices/paymentSlice';
-import { Car, User, LogOut, ChevronDown, ChevronRight, Bell, Shield, Clock, Check, CheckCircle2, CreditCard, TrendingUp } from 'lucide-react';
+import { Car, User, LogOut, ChevronDown, ChevronRight, Bell, Shield, Clock, Check, CheckCircle2, CreditCard, TrendingUp, LifeBuoy } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function Navbar() {
@@ -76,6 +76,16 @@ export default function Navbar() {
                 <div className="flex items-center gap-3">
                     {isAuthenticated ? (
                         <>
+                            {/* Day 12 Customer Support Button */}
+                            <button
+                                type="button"
+                                onClick={() => dispatch(openSupportModal())}
+                                title="Customer Support"
+                                className="w-10 h-10 rounded-xl glass-2 flex items-center justify-center text-[#5C4A4A] hover:text-[#FF7A59] hover:bg-white/80 transition-all"
+                            >
+                                <LifeBuoy className="w-4 h-4" />
+                            </button>
+
                             {/* Interactive In-App Notifications Drawer */}
                             <div className="relative">
                                 <button
@@ -99,7 +109,7 @@ export default function Navbar() {
 
                                 {notificationsOpen && (
                                     <div
-                                        className="absolute right-0 mt-2.5 w-80 sm:w-96 bg-white rounded-3xl p-4 shadow-[0_24px_60px_rgba(59,42,42,0.18)] z-50 animate-sheet-up border border-[#E8DFDF]"
+                                        className="absolute right-0 mt-2.5 w-[calc(100vw-2rem)] max-w-sm sm:w-96 bg-white rounded-3xl p-4 shadow-[0_24px_60px_rgba(59,42,42,0.18)] z-50 animate-sheet-up border border-[#E8DFDF]"
                                         onMouseLeave={() => setNotificationsOpen(false)}
                                     >
                                         <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-[#E8DFDF]/60">
@@ -175,7 +185,7 @@ export default function Navbar() {
                                 {/* Dropdown Menu (Solid Opaque Card - No Map Bleed-through) */}
                                 {dropdownOpen && (
                                     <div
-                                        className="absolute right-0 mt-2.5 w-76 bg-white rounded-3xl p-3 shadow-[0_24px_60px_rgba(59,42,42,0.18)] z-50 animate-sheet-up border border-[#E8DFDF]"
+                                        className="absolute right-0 mt-2.5 w-[calc(100vw-2rem)] max-w-xs sm:w-80 bg-white rounded-3xl p-3 shadow-[0_24px_60px_rgba(59,42,42,0.18)] z-50 animate-sheet-up border border-[#E8DFDF]"
                                         onMouseLeave={() => setDropdownOpen(false)}
                                     >
                                         {/* User Identity Header Card */}
@@ -284,22 +294,22 @@ export default function Navbar() {
                                                 <ChevronRight className="w-3.5 h-3.5 text-[#C9BDBD] group-hover:text-[#FF7A59] transition-colors" />
                                             </button>
 
-                                            {/* Driver Earnings (Day 8 Backend Records) */}
+                                            {/* Day 12 Customer Support */}
                                             <button
                                                 type="button"
                                                 onClick={() => {
                                                     setDropdownOpen(false);
-                                                    dispatch(openEarningsModal());
+                                                    dispatch(openSupportModal());
                                                 }}
-                                                className="w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold text-[#5C4A4A] hover:text-[#3B2A2A] hover:bg-[#E6F9F0] transition-all group text-left"
+                                                className="w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold text-[#5C4A4A] hover:text-[#3B2A2A] hover:bg-[#FFF3EE] transition-all group text-left"
                                             >
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-7 h-7 rounded-lg bg-[#E6F9F0] group-hover:bg-white flex items-center justify-center text-[#059669] transition-colors shadow-sm">
-                                                        <TrendingUp className="w-3.5 h-3.5" />
+                                                    <div className="w-7 h-7 rounded-lg bg-[#FFF3EE] group-hover:bg-white flex items-center justify-center text-[#FF7A59] transition-colors shadow-sm">
+                                                        <LifeBuoy className="w-3.5 h-3.5" />
                                                     </div>
-                                                    <span className="text-[#059669]">Driver Earnings (Day 8)</span>
+                                                    <span>Customer Support</span>
                                                 </div>
-                                                <ChevronRight className="w-3.5 h-3.5 text-[#A7F3D0] group-hover:text-[#059669] transition-colors" />
+                                                <ChevronRight className="w-3.5 h-3.5 text-[#C9BDBD] group-hover:text-[#FF7A59] transition-colors" />
                                             </button>
                                         </div>
 

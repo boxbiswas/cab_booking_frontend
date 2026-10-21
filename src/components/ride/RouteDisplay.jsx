@@ -82,9 +82,24 @@ const createDriverIcon = (heading = 0) => {
 export default function RouteDisplay({ pickup, destination, route, driverLocation, driverName }) {
     const map = useMap();
 
+    // Invalidate map size on mount and window resize to prevent tile rendering gaps
+    useEffect(() => {
+        if (!map) return;
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+        const handleResize = () => map.invalidateSize();
+        window.addEventListener('resize', handleResize);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [map]);
+
     // Auto-fit bounds whenever pickup or destination changes
     useEffect(() => {
         if (!map) return;
+        map.invalidateSize();
 
         if (pickup?.latitude && destination?.latitude) {
             const points = [

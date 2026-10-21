@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import AppLayout from '../components/layout/AppLayout';
 import MapView from '../components/ride/MapView';
@@ -12,10 +12,11 @@ import ActiveRideCard from '../components/ride/ActiveRideCard';
 import { calculateRoute, setPickup, setDestination } from '../redux/slices/mapSlice';
 import { fetchFareEstimates, setCurrentRide, setDriverLocation, addNotification, getRideDetails, setSelectedTier } from '../redux/slices/rideSlice';
 import { setVerifiedPayment, openReceiptModal } from '../redux/slices/paymentSlice';
-import DriverEarningsModal from '../components/payment/DriverEarningsModal';
-import PaymentMethodsModal from '../components/payment/PaymentMethodsModal';
 import RatingModal from '../components/ride/RatingModal';
 import DriverProfileModal from '../components/ride/DriverProfileModal';
+import CancelRideModal from '../components/ride/CancelRideModal';
+import EmergencySosModal from '../components/ride/EmergencySosModal';
+import MultiStopModal from '../components/ride/MultiStopModal';
 import { getSocket, joinRideRoom, leaveRideRoom } from '../socket';
 import { Sparkles, Car } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -168,11 +169,12 @@ export default function Dashboard() {
         };
     }, [currentRide?.id, user?.id, dispatch]);
 
+    const [mobileView, setMobileView] = useState('booking');
+
     return (
         <AppLayout>
-            <div className="space-y-6 max-w-7xl mx-auto">
-                {/* Header Welcome Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+            <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#3B2A2A] font-display">
                             Hey {user?.name?.split(' ')[0] || 'Rider'}, ready to ride?
@@ -188,15 +190,44 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Main Split Grid: Booking Panel on Left, Leaflet Map on Right */}
+                <div className="flex lg:hidden items-center p-1 bg-white/70 backdrop-blur-md rounded-2xl border border-white/80 shadow-xs">
+                    <button
+                        type="button"
+                        onClick={() => setMobileView('booking')}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                            mobileView === 'booking'
+                                ? 'bg-[#FF7A59] text-white shadow-[0_4px_12px_rgba(255,122,89,0.3)]'
+                                : 'text-[#7A6A6A] hover:text-[#3B2A2A]'
+                        }`}
+                    >
+                        <Car className="w-4 h-4" />
+                        <span>{currentRide && bookingSuccess ? 'Ride Status' : 'Plan Ride'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMobileView('map')}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 relative ${
+                            mobileView === 'map'
+                                ? 'bg-[#FF7A59] text-white shadow-[0_4px_12px_rgba(255,122,89,0.3)]'
+                                : 'text-[#7A6A6A] hover:text-[#3B2A2A]'
+                        }`}
+                    >
+                        <span className="w-2 h-2 rounded-full bg-[#FF7A59]" />
+                        <span>Live Map</span>
+                        {driverLocation?.latitude && (
+                            <span className="w-2 h-2 rounded-full bg-[#059669] animate-ping" />
+                        )}
+                    </button>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* Booking Control Panel (Left 5 Cols on desktop) */}
-                    <div className="lg:col-span-5 space-y-5">
+                    <div className={`lg:col-span-5 space-y-5 ${mobileView === 'booking' ? 'block' : 'hidden lg:block'}`}>
                         {currentRide && bookingSuccess ? (
-                            /* Active Ride Card upon confirmation */
-                            <ActiveRideCard ride={currentRide} />
+                            <ActiveRideCard
+                                ride={currentRide}
+                                onViewMap={() => setMobileView('map')}
+                            />
                         ) : (
-                            /* Ride Booking Panel */
                             <div className="card glass-3 border border-white/80 shadow-2xl p-5 sm:p-6 space-y-5 animate-fade-in">
                                 <div className="flex items-center justify-between pb-3 border-b border-[#E8DFDF]/60">
                                     <div className="flex items-center gap-2">
@@ -207,31 +238,26 @@ export default function Dashboard() {
                                             Plan Your Ride
                                         </h2>
                                     </div>
-                                    <span className="text-[11px] font-bold text-[#FF7A59] bg-[#FFF3EE] px-2.5 py-1 rounded-full border border-[#FFC9B5]">
-                                        Upfront Pricing
-                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setMobileView('map')}
+                                        className="lg:hidden text-[11px] font-bold text-[#FF7A59] bg-[#FFF3EE] px-2.5 py-1 rounded-full border border-[#FFC9B5] flex items-center gap-1"
+                                    >
+                                        <span>View Map</span>
+                                        <span>→</span>
+                                    </button>
                                 </div>
 
-                                {/* Pickup Selector Subcomponent */}
                                 <PickupSelector />
-
-                                {/* Destination Selector Subcomponent */}
                                 <DestinationSelector />
-
-                                {/* Vehicle Tier Selector Subcomponent */}
                                 <RideTypeSelector />
-
-                                {/* Fare Estimate Breakdown Subcomponent */}
                                 {destination && <FareEstimate />}
-
-                                {/* Confirm Ride Button Subcomponent */}
                                 <ConfirmRideButton />
                             </div>
                         )}
                     </div>
 
-                    {/* Interactive Leaflet Map (Right 7 Cols on desktop) */}
-                    <div className="lg:col-span-7 h-[500px] lg:h-[620px] sticky top-24 rounded-3xl overflow-hidden shadow-2xl border border-white/80">
+                    <div className={`lg:col-span-7 h-[420px] sm:h-[500px] lg:h-[620px] sticky top-24 rounded-3xl overflow-hidden shadow-2xl border border-white/80 relative ${mobileView === 'map' ? 'block' : 'hidden lg:block'}`}>
                         <MapView
                             pickup={pickup}
                             destination={destination}
@@ -240,14 +266,25 @@ export default function Dashboard() {
                             driverName={currentRide?.driverName}
                             className="w-full h-full"
                         />
+
+                        <div className="lg:hidden absolute bottom-4 left-4 right-4 z-10 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setMobileView('booking')}
+                                className="px-5 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-gray-200 text-xs font-extrabold text-[#3B2A2A] hover:bg-white flex items-center gap-2 active:scale-95 transition-all"
+                            >
+                                <Car className="w-4 h-4 text-[#FF7A59]" />
+                                <span>{currentRide && bookingSuccess ? 'View Ride Details' : 'Back to Booking'}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Modals for Driver Earnings, Saved Payment Methods, Reviews & Driver Profile */}
-                <DriverEarningsModal />
-                <PaymentMethodsModal />
                 <RatingModal />
                 <DriverProfileModal />
+                <CancelRideModal />
+                <EmergencySosModal />
+                <MultiStopModal />
             </div>
         </AppLayout>
     );

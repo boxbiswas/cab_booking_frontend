@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearAuthError } from '../../redux/slices/authSlice';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function LoginForm() {
@@ -37,12 +37,6 @@ export default function LoginForm() {
         }
     };
 
-    // Quick demo login prefill for testing
-    const handleQuickDemo = () => {
-        setEmail('rider@hopin.com');
-        setPassword('Password123!');
-        dispatch(clearAuthError());
-    };
 
     return (
         <div className="w-full max-w-md mx-auto glass-3 rounded-4xl p-8 sm:p-10 border border-white/80 shadow-2xl animate-fade-in">
@@ -135,17 +129,6 @@ export default function LoginForm() {
                 </button>
             </form>
 
-            {/* Quick Demo Helper */}
-            <div className="mt-6 pt-5 border-t border-[#E8DFDF]/60 text-center">
-                <button
-                    type="button"
-                    onClick={handleQuickDemo}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-[#E8532E] bg-[#FFF3EE] hover:bg-[#FFE3D8] transition-colors border border-[#FFC9B5]"
-                >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Prefill Demo Credentials
-                </button>
-            </div>
 
             {/* Register Link Footer */}
             <div className="mt-6 text-center text-sm text-[#7A6A6A]">

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { fetchRideHistory, openReviewModal, openDriverProfileModal } from '../redux/slices/rideSlice';
-import Navbar from '../components/layout/Navbar';
+import AppLayout from '../components/layout/AppLayout';
 import RideHistoryCard from '../components/history/RideHistoryCard';
 import RideDetails from '../components/history/RideDetails';
 import ReceiptView from '../components/history/ReceiptView';
@@ -84,12 +84,8 @@ export default function RideHistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex flex-col">
-            <Navbar />
-
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-                
-                {/* Header Title & Breadcrumb */}
+        <AppLayout>
+            <div className="space-y-6 max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2 text-xs text-gray-400 font-medium mb-1">
@@ -231,12 +227,26 @@ export default function RideHistoryPage() {
 
                 {/* Content Section: History Cards Grid or Empty State */}
                 {historyLoading && historyRides.length === 0 ? (
-                    <div className="py-20 flex flex-col items-center justify-center space-y-3">
-                        <Loader2 className="w-8 h-8 text-[#FF7A59] animate-spin" />
-                        <p className="text-xs font-semibold text-[#5C4A4A]">Loading your rides...</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 animate-fade-in">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="card glass-2 p-5 border border-white/70 space-y-3.5">
+                                <div className="flex justify-between items-center">
+                                    <div className="h-5 skeleton w-24 rounded-full" />
+                                    <div className="h-4 skeleton w-16 rounded-md" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-3.5 skeleton w-full rounded-md" />
+                                    <div className="h-3.5 skeleton w-4/5 rounded-md" />
+                                </div>
+                                <div className="pt-3 border-t border-[#E8DFDF]/60 flex justify-between items-center">
+                                    <div className="h-6 skeleton w-20 rounded-md" />
+                                    <div className="h-7 skeleton w-24 rounded-xl" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : historyRides.length === 0 ? (
-                    <div className="bg-white rounded-3xl p-12 border border-gray-100 shadow-xs text-center max-w-lg mx-auto space-y-4">
+                    <div className="bg-white rounded-3xl p-10 sm:p-12 border border-gray-100 shadow-xs text-center max-w-lg mx-auto space-y-4 animate-fade-in">
                         <div className="w-16 h-16 rounded-3xl bg-[#FFF3EE] text-[#FF7A59] flex items-center justify-center mx-auto shadow-inner">
                             <Car className="w-8 h-8" />
                         </div>
@@ -276,34 +286,27 @@ export default function RideHistoryPage() {
                     </div>
                 )}
 
-            </main>
+                <RideDetails
+                    ride={selectedRide}
+                    isOpen={!!selectedRide}
+                    onClose={() => setSelectedRide(null)}
+                    onViewReceipt={(id) => {
+                        setSelectedRide(null);
+                        setReceiptRideId(id);
+                    }}
+                    onRateRide={(r) => dispatch(openReviewModal(r))}
+                    onViewDriver={(r) => dispatch(openDriverProfileModal(r))}
+                />
 
-            {/* Ride Details Modal */}
-            <RideDetails
-                ride={selectedRide}
-                isOpen={!!selectedRide}
-                onClose={() => setSelectedRide(null)}
-                onViewReceipt={(id) => {
-                    setSelectedRide(null);
-                    setReceiptRideId(id);
-                }}
-                onRateRide={(r) => dispatch(openReviewModal(r))}
-                onViewDriver={(r) => dispatch(openDriverProfileModal(r))}
-            />
+                <ReceiptView
+                    rideId={receiptRideId}
+                    isOpen={!!receiptRideId}
+                    onClose={() => setReceiptRideId(null)}
+                />
 
-            {/* Official Digital Receipt Modal */}
-            <ReceiptView
-                rideId={receiptRideId}
-                isOpen={!!receiptRideId}
-                onClose={() => setReceiptRideId(null)}
-            />
-
-            {/* Post-Ride Rating Modal (Day 10) */}
-            <RatingModal />
-
-            {/* Driver Profile & Reviews Modal (Day 10) */}
-            <DriverProfileModal />
-
-        </div>
+                <RatingModal />
+                <DriverProfileModal />
+            </div>
+        </AppLayout>
     );
 }

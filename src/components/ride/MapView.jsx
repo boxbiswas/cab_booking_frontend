@@ -9,7 +9,7 @@ export default function MapView({
     route,
     driverLocation,
     driverName,
-    className = "w-full h-full min-h-[400px] rounded-3xl overflow-hidden shadow-glass border border-white/70"
+    className = "w-full h-full min-h-[300px] rounded-3xl overflow-hidden shadow-glass border border-white/70"
 }) {
     const center = pickup?.latitude && pickup?.longitude
         ? [pickup.latitude, pickup.longitude]
@@ -23,15 +23,13 @@ export default function MapView({
                 zoomControl={false}
                 scrollWheelZoom={true}
                 className="w-full h-full z-0"
-                style={{ height: '100%', minHeight: '400px', width: '100%' }}
+                style={{ height: '100%', width: '100%' }}
             >
-                {/* 100% Free OpenStreetMap Tiles (No API key required) */}
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {/* Markers, Live Driver, & Polyline */}
                 <RouteDisplay
                     pickup={pickup}
                     destination={destination}
@@ -41,7 +39,6 @@ export default function MapView({
                 />
             </MapContainer>
 
-            {/* Subtle Overlay Vignette */}
             <div className="absolute inset-0 pointer-events-none rounded-3xl shadow-[inset_0_0_24px_rgba(59,42,42,0.06)]" />
         </div>
     );
