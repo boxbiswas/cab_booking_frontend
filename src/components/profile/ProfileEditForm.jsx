@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateProfile } from '../../redux/slices/authSlice';
 import { User, Phone, Image, Check, X, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { nameSchema, phoneSchema } from '../../utils/validation';
 
 export default function ProfileEditForm({ user, onClose }) {
     const [name, setName] = useState(user?.name || '');
@@ -17,9 +18,22 @@ export default function ProfileEditForm({ user, onClose }) {
         e.preventDefault();
         setFormError('');
 
-        if (!name.trim()) {
-            setFormError('Name cannot be empty');
+        const nameValidation = nameSchema.safeParse(name.trim());
+        if (!nameValidation.success) {
+            const msg = nameValidation.error.issues?.[0]?.message || 'Invalid name';
+            setFormError(msg);
+            toast.error(msg);
             return;
+        }
+
+        if (phone.trim()) {
+            const phoneValidation = phoneSchema.safeParse(phone.trim());
+            if (!phoneValidation.success) {
+                const msg = phoneValidation.error.issues?.[0]?.message || 'Invalid phone number';
+                setFormError(msg);
+                toast.error(msg);
+                return;
+            }
         }
 
         try {

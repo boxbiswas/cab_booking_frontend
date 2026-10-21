@@ -26,6 +26,7 @@ import {
     deleteEmergencyContact
 } from '../redux/slices/rideSlice';
 import { toast } from 'react-toastify';
+import { nameSchema, phoneSchema } from '../utils/validation';
 
 export default function Profile() {
     const dispatch = useDispatch();
@@ -69,8 +70,15 @@ export default function Profile() {
 
     const handleCreateContact = async (e) => {
         e.preventDefault();
-        if (!newContactName.trim() || !newContactPhone.trim()) {
-            toast.warning("Please provide contact name and phone number");
+        const nameVal = nameSchema.safeParse(newContactName.trim());
+        if (!nameVal.success) {
+            toast.error(nameVal.error.issues?.[0]?.message || "Invalid contact name");
+            return;
+        }
+
+        const phoneVal = phoneSchema.safeParse(newContactPhone.trim());
+        if (!phoneVal.success) {
+            toast.error(phoneVal.error.issues?.[0]?.message || "Invalid contact phone number");
             return;
         }
 

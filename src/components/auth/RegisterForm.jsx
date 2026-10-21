@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, clearAuthError } from '../../redux/slices/authSlice';
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { registerSchema } from '../../utils/validation';
 
 export default function RegisterForm() {
     const [name, setName] = useState('');
@@ -22,24 +23,24 @@ export default function RegisterForm() {
         e.preventDefault();
         setClientError('');
 
-        if (!name.trim()) {
-            setClientError('Please enter your full name');
-            return;
-        }
-        if (!email.trim()) {
-            setClientError('Please enter your email address');
-            return;
-        }
-        if (!phone.trim()) {
-            setClientError('Please enter your phone number');
-            return;
-        }
-        if (password.length < 6) {
-            setClientError('Password must be at least 6 characters long');
-            return;
-        }
         if (password !== confirmPassword) {
-            setClientError('Passwords do not match');
+            const msg = 'Passwords do not match';
+            setClientError(msg);
+            toast.error(msg);
+            return;
+        }
+
+        const validation = registerSchema.safeParse({
+            name: name.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+            password
+        });
+
+        if (!validation.success) {
+            const firstError = validation.error.issues?.[0]?.message || 'Invalid input';
+            setClientError(firstError);
+            toast.error(firstError);
             return;
         }
 

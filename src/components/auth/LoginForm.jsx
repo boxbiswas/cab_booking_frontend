@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearAuthError } from '../../redux/slices/authSlice';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { loginSchema } from '../../utils/validation';
 
 export default function LoginForm() {
     const [email, setEmail] = useState('');
@@ -19,12 +20,11 @@ export default function LoginForm() {
         e.preventDefault();
         setClientError('');
 
-        if (!email.trim()) {
-            setClientError('Please enter your email address');
-            return;
-        }
-        if (!password) {
-            setClientError('Please enter your password');
+        const validation = loginSchema.safeParse({ email: email.trim(), password });
+        if (!validation.success) {
+            const firstError = validation.error.issues?.[0]?.message || 'Invalid email or password';
+            setClientError(firstError);
+            toast.error(firstError);
             return;
         }
 

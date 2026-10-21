@@ -53,32 +53,32 @@ A modern, glassmorphism-styled Ride-Hailing & Urban Mobility Web Application bui
 
 ```mermaid
 flowchart TD
-    A[Rider Lands on HopIn] --> B{Authenticated?}
-    B -- No --> C[Login / Register Page]
-    B -- Yes --> D[Dashboard / Studio]
+    A["Rider Lands on HopIn"] --> B{"Authenticated?"}
+    B -- "No" --> C["Login / Register Page"]
+    B -- "Yes" --> D["Dashboard / Studio"]
     
-    C -->|JWT Auth Cookie| D
+    C -->|"JWT Auth Cookie"| D
     
-    D --> E[Auto-Detect GPS or Search Pickup]
-    E --> F[Select Destination & Add Stops]
-    F --> G[OSRM Route Calculation]
-    G --> H[Multi-Tier Fare Comparison]
+    D --> E["Auto-Detect GPS or Search Pickup"]
+    E --> F["Select Destination & Add Stops"]
+    F --> G["OSRM Route Calculation"]
+    G --> H["Multi-Tier Fare Comparison"]
     
-    H --> I[Apply Promo Code]
-    I --> J[Confirm & Request Ride]
+    H --> I["Apply Promo Code"]
+    I --> J["Confirm & Request Ride"]
     
-    J --> K[Driver Auto-Matching & Dispatch]
-    K --> L[Live Socket.IO GPS Telemetry]
+    J --> K["Driver Auto-Matching & Dispatch"]
+    K --> L["Live Socket.IO GPS Telemetry"]
     
-    L --> M{In-Ride Safety?}
-    M -- Yes --> N[1-Tap SOS Alert Triggered]
-    M -- No --> O[Driver Arrives & Completes Trip]
+    L --> M{"In-Ride Safety?"}
+    M -- "Yes" --> N["1-Tap SOS Alert Triggered"]
+    M -- "No" --> O["Driver Arrives & Completes Trip"]
     
-    O --> P[HopIn Secure Stripe Checkout]
-    P --> Q[Cryptographic Webhook Verified]
-    Q --> R[View Digital Perforated Receipt]
-    R --> S[Submit 5-Star Driver Review]
-    S --> T[Saved to Ride History]
+    O --> P["HopIn Secure Stripe Checkout"]
+    P --> Q["Cryptographic Webhook Verified"]
+    Q --> R["View Digital Perforated Receipt"]
+    R --> S["Submit 5-Star Driver Review"]
+    S --> T["Saved to Ride History"]
 ```
 
 ---
