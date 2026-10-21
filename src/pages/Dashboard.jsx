@@ -17,6 +17,8 @@ import DriverProfileModal from '../components/ride/DriverProfileModal';
 import CancelRideModal from '../components/ride/CancelRideModal';
 import EmergencySosModal from '../components/ride/EmergencySosModal';
 import MultiStopModal from '../components/ride/MultiStopModal';
+import PaymentModal from '../components/payment/PaymentModal';
+import ReceiptModal from '../components/payment/ReceiptModal';
 import { getSocket, joinRideRoom, leaveRideRoom } from '../socket';
 import { Sparkles, Car } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -285,6 +287,8 @@ export default function Dashboard() {
                 <CancelRideModal />
                 <EmergencySosModal />
                 <MultiStopModal />
+                <PaymentModal ride={currentRide} />
+                <ReceiptModal ride={currentRide} />
             </div>
         </AppLayout>
     );

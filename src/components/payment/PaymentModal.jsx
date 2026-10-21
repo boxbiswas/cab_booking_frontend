@@ -27,9 +27,13 @@ import { toast } from 'react-toastify';
 export default function PaymentModal({ ride }) {
     const dispatch = useDispatch();
     const { isPaymentModalOpen, paymentMethods, intent, processingPayment, error } = useSelector((state) => state.payment);
+    const { currentRide } = useSelector((state) => state.ride);
     const { user } = useSelector((state) => state.auth);
 
-    const [selectedTab, setSelectedTab] = useState('CARD'); // 'CARD', 'UPI', 'WALLET', 'SAVED'
+    const activeRide = ride || currentRide;
+
+    // Payment tab state
+    const [selectedTab, setSelectedTab] = useState('CARD');
     const [selectedSavedId, setSelectedSavedId] = useState(null);
 
     // Form inputs for new card
@@ -57,9 +61,9 @@ export default function PaymentModal({ ride }) {
         }
     }, [paymentMethods, selectedSavedId]);
 
-    if (!isPaymentModalOpen || !ride) return null;
+    if (!isPaymentModalOpen || !activeRide) return null;
 
-    const amount = parseFloat(ride.finalFare || ride.estimatedFare || 18.50).toFixed(2);
+    const amount = parseFloat(activeRide.finalFare || activeRide.estimatedFare || 18.50).toFixed(2);
     const baseFare = (amount * 0.45).toFixed(2);
     const distanceFare = (amount * 0.40).toFixed(2);
     const platformFee = (amount * 0.15).toFixed(2);
@@ -71,7 +75,7 @@ export default function PaymentModal({ ride }) {
             let activeIntentId = intent?.paymentIntentId;
             if (!activeIntentId) {
                 const intentRes = await dispatch(createPaymentIntent({
-                    rideId: ride.id,
+                    rideId: activeRide.id,
                     method: selectedTab === 'SAVED' ? 'CARD' : selectedTab,
                     currency: 'USD'
                 })).unwrap();
@@ -88,9 +92,9 @@ export default function PaymentModal({ ride }) {
                 }));
             }
 
-            // 3. Dispatch verified webhook simulation (verifies cryptographic Stripe signature on backend)
+            // 3. Dispatch verified webhook simulation
             await dispatch(simulateVerifiedPayment({
-                rideId: ride.id,
+                rideId: activeRide.id,
                 amount,
                 paymentIntentId: activeIntentId,
                 outcome
@@ -98,7 +102,7 @@ export default function PaymentModal({ ride }) {
 
             if (outcome === 'success') {
                 toast.success("Payment verified! Receipt generated.", { icon: '💳' });
-                dispatch(getRideDetails(ride.id));
+                dispatch(getRideDetails(activeRide.id));
             } else {
                 toast.error("Payment declined by card issuer.");
             }
@@ -109,10 +113,8 @@ export default function PaymentModal({ ride }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            {/* Solid Card Container (100% opaque, no map transparency) */}
             <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
                 
-                {/* Header */}
                 <div className="px-6 py-5 bg-gradient-to-r from-[#FF7A59] to-[#E8532E] text-white flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
@@ -132,21 +134,18 @@ export default function PaymentModal({ ride }) {
                     </button>
                 </div>
 
-                {/* Modal Body */}
                 <div className="p-6 overflow-y-auto space-y-6">
 
-                    {/* Fare Summary Pill */}
                     <div className="p-4 rounded-2xl bg-[#FFF6F3] border border-[#FFD6CA] flex items-center justify-between">
                         <div>
-                            <span className="text-[11px] font-bold uppercase text-[#7A6A6A]">Ride to {ride.dropoffAddress?.split(',')[0]}</span>
+                            <span className="text-[11px] font-bold uppercase text-[#7A6A6A]">Ride to {activeRide.dropoffAddress?.split(',')[0]}</span>
                             <h4 className="text-2xl font-extrabold text-[#3B2A2A] font-display">${amount}</h4>
                         </div>
                         <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FFEBE5] text-[#E8532E] border border-[#FFC9B5]">
-                            {ride.rideType || 'SEDAN'}
+                            {activeRide.rideType || 'SEDAN'}
                         </span>
                     </div>
 
-                    {/* Payment Method Selector Tabs */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-[#5C4A4A] uppercase tracking-wide">
                             Select Payment Method
@@ -211,7 +210,6 @@ export default function PaymentModal({ ride }) {
                         </div>
                     </div>
 
-                    {/* Tab 1: Credit / Debit Card Form */}
                     {selectedTab === 'CARD' && (
                         <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3 animate-fade-in">
                             <div>
@@ -282,7 +280,6 @@ export default function PaymentModal({ ride }) {
                         </div>
                     )}
 
-                    {/* Tab 2: UPI / GPay Form */}
                     {selectedTab === 'UPI' && (
                         <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3 animate-fade-in">
                             <span className="text-xs font-semibold text-[#5C4A4A]">Fast UPI Payment:</span>
@@ -310,7 +307,6 @@ export default function PaymentModal({ ride }) {
                         </div>
                     )}
 
-                    {/* Tab 3: Digital Wallet */}
                     {selectedTab === 'WALLET' && (
                         <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3 animate-fade-in">
                             <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200">
@@ -328,7 +324,6 @@ export default function PaymentModal({ ride }) {
                         </div>
                     )}
 
-                    {/* Tab 4: Vaulted Saved Cards */}
                     {selectedTab === 'SAVED' && (
                         <div className="space-y-2 animate-fade-in">
                             {paymentMethods.length === 0 ? (
@@ -373,14 +368,13 @@ export default function PaymentModal({ ride }) {
                         </div>
                     )}
 
-                    {/* Fare Line Item Breakdown */}
                     <div className="space-y-1.5 text-xs text-[#7A6A6A] pt-2 border-t border-gray-100">
                         <div className="flex justify-between">
                             <span>Base Ride Fare</span>
                             <span className="font-semibold text-[#3B2A2A]">${baseFare}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span>Distance Fare ({ride.distanceKm} km)</span>
+                            <span>Distance Fare ({activeRide.distanceKm} km)</span>
                             <span className="font-semibold text-[#3B2A2A]">${distanceFare}</span>
                         </div>
                         <div className="flex justify-between">
@@ -394,7 +388,6 @@ export default function PaymentModal({ ride }) {
                     </div>
                 </div>
 
-                {/* Footer Buttons */}
                 <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-2">
                     <button
                         type="button"

@@ -16,8 +16,6 @@ import {
     openPaymentModal,
     openReceiptModal
 } from '../../redux/slices/paymentSlice';
-import PaymentModal from '../payment/PaymentModal';
-import ReceiptModal from '../payment/ReceiptModal';
 import { clearDestination } from '../../redux/slices/mapSlice';
 import {
     Car,
@@ -589,10 +587,6 @@ export default function ActiveRideCard({ ride, onViewMap }) {
                     </div>
                 </div>
             )}
-
-            {/* Modals */}
-            <PaymentModal ride={ride} />
-            <ReceiptModal ride={ride} />
         </div>
     );
 }
